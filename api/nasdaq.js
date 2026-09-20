@@ -15,7 +15,7 @@ export default async function handler(req,res){
     const interval=intervalMap[granularity];
     if(!interval||!start||!end)return res.status(400).json({error:'Missing or unsupported NASDAQ parameters'});
     const period1=Number(start),period2=Number(end);
-    const url=new URL('https://query1.finance.yahoo.com/v8/finance/chart/%5ENDX');
+    const url=new URL('https://query1.finance.yahoo.com/v8/finance/chart/NQ%3DF');
     url.searchParams.set('period1',String(period1));
     url.searchParams.set('period2',String(period2));
     url.searchParams.set('interval',interval);
@@ -35,7 +35,7 @@ export default async function handler(req,res){
     const out=candles.slice(-Number(limit||300));
     res.setHeader('Cache-Control','s-maxage=5, stale-while-revalidate=10');
     res.setHeader('Content-Type','application/json');
-    return res.status(200).json({candles:out,source:'Yahoo Finance • ^NDX',market:'NASDAQ-100'});
+    return res.status(200).json({candles:out,source:'Yahoo Finance • NQ=F',market:'Nasdaq-100 E-mini futures'});
   }catch(e){
     return res.status(500).json({error:e.message||'NASDAQ market data proxy failed'});
   }
