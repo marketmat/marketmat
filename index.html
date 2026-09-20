@@ -24,20 +24,29 @@ header{margin-bottom:6px}
 .layout{height:calc(100vh - 70px);min-height:0;align-items:center}
 .mat-wrap{height:100%;align-items:center}
 .mat{width:min(82vh,850px);max-width:100%;max-height:calc(100vh - 82px)}
-.right{max-height:calc(100vh - 70px);overflow:hidden}
-.scoreboard{padding:9px}
-.why{margin-top:7px;padding:9px}
-.factor{padding:5px 0;font-size:11px}
-.bias{margin-top:7px}
-.alert{margin-top:7px;padding:8px}
-.footer{margin-top:3px}
+.right{max-height:calc(100vh - 70px);overflow:visible;display:flex;flex-direction:column;justify-content:center;gap:5px}
+.scoreboard{padding:7px}
+.scores{margin:4px 0}
+.score{font-size:28px}
+.clock{font-size:16px;margin:3px 0}
+.period{font-size:9px;padding:3px}
+.status{padding:5px;font-size:10px}
+.bias{margin-top:3px}
+.bias>div{padding:3px 0;font-size:9px}
+.why{margin-top:3px;padding:6px}
+.why h2{font-size:11px;margin:0 0 3px}
+.factor{padding:2px 0;font-size:9px;line-height:1.05}
+.missing{font-size:8px;line-height:1.1;margin-top:3px}
+.alert{margin-top:3px;padding:6px;font-size:10px}
+.footer{margin-top:2px}
 @media(max-height:700px){
   .app{zoom:.92}
   .layout{height:calc(100vh - 62px)}
   .mat{width:min(78vh,780px);max-height:calc(100vh - 75px)}
   .right{max-height:calc(100vh - 62px)}
-  .why{padding:7px}
-  .factor{padding:4px 0;font-size:10px}
+  .why{padding:5px}
+  .factor{padding:1px 0;font-size:8px}
+  .alert{padding:5px}
 }
 </style></style>
 </head>
