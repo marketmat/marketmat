@@ -84,7 +84,7 @@ async function scanOtherAssets(){
           if(setup){
             const thresholdCross=!state.evaluated||state.dir!==setup.dir||state.count<7;
             const goldenUpgrade=state.evaluated&&state.dir===setup.dir&&state.count<9&&setup.count===9;
-            if(state.evaluated&&(thresholdCross||goldenUpgrade)){
+            if((!state.evaluated&&setup.count>=7)||(state.evaluated&&(thresholdCross||goldenUpgrade))){
               showTradeSetupAlert(setup);
             }
             state.dir=setup.dir;state.count=setup.count;
