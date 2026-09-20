@@ -5,85 +5,61 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Market Mat</title>
 <style>
-:root{--green:#0b3d24;--mat:#197443;--gold:#d4af37;--ink:#06110b;--panel:#0b1911;--line:#294936;--white:#f4f4f0;--bull:#5cff88;--bear:#ff6565;--yellow:#ffd83d;--vwap:#54b9ff}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 35%,#123b25 0,#06110b 55%,#030806 100%);color:var(--white);font-family:Inter,Arial,sans-serif}.app{min-height:100vh;padding:18px;max-width:1500px;margin:auto}
-header{display:flex;align-items:center;gap:18px;margin-bottom:16px}h1{margin:0;font-size:30px;letter-spacing:3px}.asset{background:#0d2116;color:white;border:1px solid var(--gold);border-radius:8px;padding:11px 38px 11px 13px;font-size:15px}.live{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px;color:#a8c9b1}.dot{width:9px;height:9px;border-radius:50%;background:var(--bull);box-shadow:0 0 10px var(--bull)}
-.layout{display:grid;grid-template-columns:92px minmax(500px,1fr) 320px;gap:18px;align-items:start}.timeframes{display:flex;flex-direction:column;gap:7px}.timeframes button{background:#0c2115;color:#c8d8cd;border:1px solid #31543e;border-radius:7px;padding:11px 5px;font-weight:700;cursor:pointer}.timeframes button.active{background:var(--gold);color:#06110b;border-color:#ffe58a;box-shadow:0 0 14px #d4af3740}
-.mat-wrap{display:flex;justify-content:center}.mat{width:min(72vw,790px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 45%,#21824b 0,#176b3e 60%,#115b35 100%);border:18px solid var(--gold);box-shadow:0 18px 50px #000,0 0 0 3px #8e7220 inset;position:relative;overflow:hidden}.mat:before{content:"";position:absolute;inset:12%;border:1px solid #ffffff18;border-radius:50%;pointer-events:none}.center{position:absolute;width:86px;height:86px;border:4px solid var(--gold);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none}.center:after{content:"";position:absolute;inset:16px;border:1px solid #ffffff35;border-radius:50%}canvas{position:absolute;inset:42px;width:calc(100% - 84px);height:calc(100% - 84px)}
-
-.right{min-width:0}.scoreboard{background:#0b0b0b;border:3px solid var(--gold);border-radius:8px;padding:13px;box-shadow:0 8px 24px #000;position:relative}.score-title{font-size:11px;letter-spacing:2px;color:var(--gold);text-align:center}.scores{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.team{text-align:center;background:#151515;padding:7px;border:1px solid #303030}.team:first-child{border-bottom:3px solid var(--bull)}.team:last-child{border-bottom:3px solid var(--bear)}.team-name{font-size:12px;letter-spacing:1px}.score{font:800 46px/1 monospace;margin-top:5px}.bull{color:var(--bull)}.bear{color:var(--bear)}.clock{margin:10px auto 0;width:max-content;background:#050505;border:1px solid #444;padding:5px 12px;font:700 23px/1 monospace;letter-spacing:2px}.period{font-size:10px;color:#aaa;text-align:center;margin-top:4px}
-.status{margin-top:12px;text-align:center;padding:11px;border-radius:6px;font-weight:800;font-size:13px;letter-spacing:.6px}.confirmed{background:#123b23;border:1px solid var(--bull);color:#8dffa9}.developing{background:#3a2d0b;border:1px solid var(--gold);color:#ffe58a}.short{background:#42151a;border:1px solid var(--bear);color:#ff9b9b}
-.bias{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.bias div{background:#0c1a11;border:1px solid var(--line);padding:8px 4px;text-align:center;border-radius:5px;font-size:10px}.bias strong{display:block;font-size:11px;margin-top:3px}
-.why{margin-top:12px;background:#0b1911;border:1px solid var(--line);border-radius:8px;padding:13px}.why h2{margin:0 0 8px;font-size:15px}.factor{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #1c3325;font-size:12px}.factor:last-child{border-bottom:0}.good{color:var(--bull)}.bad{color:var(--bear)}.neutral{color:#c9c9c9}.missing{margin-top:10px;font-size:11px;color:#ffe58a}.alert{margin-top:12px;width:100%;background:#10251a;color:#fff;border:1px solid var(--gold);border-radius:6px;padding:11px;cursor:pointer;font-weight:700}.alert.on{background:#154e2b;border-color:var(--bull);color:#a4ffb8}
-.legend{display:flex;gap:14px;justify-content:center;margin-top:8px;font-size:10px;color:#cbd7cf}.legend span{display:flex;align-items:center;gap:5px}.swatch{width:16px;height:3px;display:inline-block}
-.footer{margin-top:12px;text-align:center;color:#6f8977;font-size:10px}
-@media(max-width:1050px){.layout{grid-template-columns:78px 1fr}.right{grid-column:1/-1}.mat{width:min(84vw,700px)}}
-@media(max-width:650px){.app{padding:10px}.layout{grid-template-columns:62px 1fr;gap:10px}header{gap:9px}h1{font-size:22px}.live{display:none}.mat{width:calc(100vw - 82px);border-width:10px}.mat canvas{inset:25px;width:calc(100% - 50px);height:calc(100% - 50px)}.right{grid-column:1/-1}}
+:root{--green:#0b3d24;--mat:#197443;--gold:#d4af37;--bull:#5cff88;--bear:#ff6565;--yellow:#ffd83d;--vwap:#54b9ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 35%,#123b25,#06110b 55%,#030806);color:#f4f4f0;font-family:Inter,Arial,sans-serif}.app{min-height:100vh;padding:18px;max-width:1500px;margin:auto}
+header{display:flex;align-items:center;gap:18px;margin-bottom:16px}h1{margin:0;font-size:30px;letter-spacing:3px}.asset{background:#0d2116;color:white;border:1px solid var(--gold);border-radius:8px;padding:11px 38px 11px 13px;font-size:15px}.live{margin-left:auto;font-size:12px;color:#a8c9b1}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bull);box-shadow:0 0 10px var(--bull);margin-right:7px}
+.layout{display:grid;grid-template-columns:92px minmax(500px,1fr) 320px;gap:18px;align-items:start}.timeframes{display:flex;flex-direction:column;gap:7px}.timeframes button{background:#0c2115;color:#c8d8cd;border:1px solid #31543e;border-radius:7px;padding:11px 5px;font-weight:700;cursor:pointer}.timeframes button.active{background:var(--gold);color:#06110b;border-color:#ffe58a}
+.mat-wrap{display:flex;justify-content:center}.mat{width:min(72vw,790px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 50% 45%,#21824b,#176b3e 60%,#115b35);border:18px solid var(--gold);box-shadow:0 18px 50px #000,0 0 0 3px #8e7220 inset;position:relative;overflow:hidden}.mat:before{content:"";position:absolute;inset:12%;border:1px solid #ffffff18;border-radius:50%}.center{position:absolute;width:86px;height:86px;border:4px solid var(--gold);border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%)}canvas{position:absolute;inset:42px;width:calc(100% - 84px);height:calc(100% - 84px)}
+.scoreboard{background:#0b0b0b;border:3px solid var(--gold);border-radius:8px;padding:13px;box-shadow:0 8px 24px #000}.score-title{font-size:11px;letter-spacing:2px;color:var(--gold);text-align:center}.scores{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.team{text-align:center;background:#151515;padding:7px;border:1px solid #303030}.team:first-child{border-bottom:3px solid var(--bull)}.team:last-child{border-bottom:3px solid var(--bear)}.team-name{font-size:12px}.score{font:800 46px/1 monospace;margin-top:5px}.bull{color:var(--bull)}.bear{color:var(--bear)}.clock{margin:10px auto 0;width:max-content;background:#050505;border:1px solid #444;padding:5px 12px;font:700 23px monospace;letter-spacing:2px}.period{text-align:center;color:#aaa;font-size:10px;margin-top:4px}
+.status{margin-top:12px;text-align:center;padding:11px;border-radius:6px;font-weight:800;font-size:13px}.confirmed{background:#123b23;border:1px solid var(--bull);color:#8dffa9}.developing{background:#3a2d0b;border:1px solid var(--gold);color:#ffe58a}.short{background:#42151a;border:1px solid var(--bear);color:#ff9b9b}
+.bias{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}.bias div{background:#0c1a11;border:1px solid #294936;padding:8px 4px;text-align:center;border-radius:5px;font-size:10px}.bias strong{display:block;margin-top:3px}.why{margin-top:12px;background:#0b1911;border:1px solid #294936;border-radius:8px;padding:13px}.why h2{margin:0 0 8px;font-size:15px}.factor{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #1c3325;font-size:12px}.good{color:var(--bull)}.bad{color:var(--bear)}.neutral{color:#ccc}.missing{margin-top:10px;font-size:11px;color:#ffe58a}.alert{margin-top:12px;width:100%;background:#10251a;color:#fff;border:1px solid var(--gold);border-radius:6px;padding:11px;cursor:pointer;font-weight:700}.alert.on{background:#154e2b;border-color:var(--bull)}.legend{display:flex;gap:14px;justify-content:center;margin-top:8px;font-size:10px;color:#cbd7cf}.swatch{width:16px;height:3px;display:inline-block;margin-right:5px}.footer{text-align:center;color:#6f8977;font-size:10px;margin-top:12px}
+@media(max-width:1050px){.layout{grid-template-columns:78px 1fr}.right{grid-column:1/-1}.mat{width:min(84vw,700px)}}@media(max-width:650px){.app{padding:10px}.layout{grid-template-columns:62px 1fr;gap:10px}h1{font-size:22px}.live{display:none}.mat{width:calc(100vw - 82px);border-width:10px}.mat canvas{inset:25px;width:calc(100% - 50px);height:calc(100% - 50px)}.right{grid-column:1/-1}}
 </style>
 </head>
 <body>
 <div class="app">
-<header><h1>MARKET MAT</h1><select id="asset" class="asset"><option>BTC/USD</option><option>ETH/USD</option><option>SOL/USD</option><option>HYPE/USD</option><option>NASDAQ</option></select><div class="live"><span class="dot"></span>PROTOTYPE DATA</div></header>
+<header><h1>MARKET MAT</h1><select id="asset" class="asset"><option value="BTC-USD">BTC/USD</option><option value="ETH-USD">ETH/USD</option><option value="SOL-USD">SOL/USD</option><option value="HYPE-USD">HYPE/USD</option><option value="NASDAQ">NASDAQ</option></select><div class="live"><span class="dot"></span><span id="dataState">LIVE MARKET DATA</span></div></header>
 <div class="layout">
 <div class="timeframes" id="timeframes"></div>
-<div>
-<div class="mat-wrap"><div class="mat"><canvas id="chart"></canvas><div class="center"></div></div></div>
-<div class="legend"><span><i class="swatch" style="background:var(--yellow)"></i>200 EMA</span><span><i class="swatch" style="background:white"></i>21 MA</span><span><i class="swatch" style="background:var(--vwap)"></i>VWAP</span></div>
-</div>
+<div><div class="mat-wrap"><div class="mat"><canvas id="chart"></canvas><div class="center"></div></div></div><div class="legend"><span><i class="swatch" style="background:var(--yellow)"></i>200 EMA</span><span><i class="swatch" style="background:white"></i>21 MA</span><span><i class="swatch" style="background:var(--vwap)"></i>VWAP</span></div></div>
 <div class="right">
-<div class="scoreboard"><div class="score-title">MARKET MAT • SCORE CLOCK</div><div class="scores"><div class="team"><div class="team-name">HOME • BULLS</div><div id="bullScore" class="score bull">50</div></div><div class="team"><div class="team-name">VISITOR • BEARS</div><div id="bearScore" class="score bear">50</div></div></div><div id="clock" class="clock">15:00</div><div id="period" class="period">15 MINUTE</div><div id="status" class="status developing">SCALP DEVELOPING</div></div>
-<div class="bias" id="bias"></div>
-<div class="why"><h2>WHY THIS SCORE</h2><div id="factors"></div><div id="missing" class="missing"></div></div>
-<button id="alertBtn" class="alert">🔔 ENABLE SCALP ALERT</button>
-</div>
-</div>
-<div class="footer">Market Mat prototype • scores are analytical signals, not guarantees</div>
+<div class="scoreboard"><div class="score-title">MARKET MAT • SCORE CLOCK</div><div class="scores"><div class="team"><div class="team-name">HOME • BULLS</div><div id="bullScore" class="score bull">50</div></div><div class="team"><div class="team-name">VISITOR • BEARS</div><div id="bearScore" class="score bear">50</div></div></div><div id="clock" class="clock">--:--</div><div id="period" class="period">15 MINUTE</div><div id="status" class="status developing">LOADING MARKET DATA</div></div>
+<div class="bias" id="bias"></div><div class="why"><h2>WHY THIS SCORE</h2><div id="factors"></div><div id="missing" class="missing"></div></div><button id="alertBtn" class="alert">🔔 ENABLE SCALP ALERT</button>
+</div></div><div class="footer">Market Mat • Coinbase public market data • analytical signals, not guarantees</div>
 </div>
 <script>
-const TF=[['1M',1],['5M',5],['15M',15],['1H',60],['4H',240],['1D',1440],['1W',10080],['1MO',43200]];
-const weights={weekly:25,daily:25,h4:25,ma:10,vwap:5,stoch:3,div:4,volume:3};
-let selected='15M',asset='BTC/USD',alertOn=false;
+const TF={1M:{mins:1,gran:'ONE_MINUTE'},5M:{mins:5,gran:'FIVE_MINUTE'},15M:{mins:15,gran:'FIFTEEN_MINUTE'},1H:{mins:60,gran:'ONE_HOUR'},4H:{mins:240,gran:'FOUR_HOUR'},1D:{mins:1440,gran:'ONE_DAY'},1W:{mins:10080,gran:'ONE_DAY'},1MO:{mins:43200,gran:'ONE_DAY'}};
+const order=['1M','5M','15M','1H','4H','1D','1W','1MO'];let selected='15M',asset='BTC-USD',candles=[],cache={},alertOn=false;
 const $=id=>document.getElementById(id);
-TF.forEach(([name])=>{const b=document.createElement('button');b.textContent=name;b.dataset.tf=name;b.onclick=()=>{selected=name;render()};$('timeframes').appendChild(b)});
-$('asset').onchange=e=>{asset=e.target.value;render()};
-$('alertBtn').onclick=()=>{alertOn=!alertOn;$('alertBtn').classList.toggle('on',alertOn);$('alertBtn').textContent=alertOn?'🔔 SCALP ALERT ENABLED':'🔔 ENABLE SCALP ALERT'};
-function seed(){let s=0;for(const c of asset)s=(s*31+c.charCodeAt(0))%100000;s+=TF.find(x=>x[0]===selected)[1]*17;return s}
-function rand(i){const x=Math.sin(seed()*0.001+i*12.9898)*43758.5453;return x-Math.floor(x)}
-function analysis(){
- const t=TF.find(x=>x[0]===selected)[1], s=seed();
- const bullish=((s%100)/100)>.34;
- const weekly=((s%17)>5)?1:-1,daily=((s%13)>4)?1:-1,h4=((s%11)>3)?1:-1;
- const above200=bullish, touch21=(s%5)!==0, aboveVWAP=bullish, stoch=((s%7)!==0), div=((s%9)<4), volume=((s%6)!==0);
- let bull=0; bull+=weekly>0?25:0; bull+=daily>0?25:0; bull+=h4>0?25:0; bull+=(above200&&touch21)?10:0; bull+=aboveVWAP?5:0; bull+=stoch?3:0; bull+=div?4:0; bull+=volume?3:0;
- let bear=100-bull;
- // Keep opposite score complementary, but require higher-timeframe direction to dominate scalp confirmation.
- const longConfirmed=weekly>0&&daily>0&&h4>0&&above200&&touch21&&stoch&&aboveVWAP;
- const shortConfirmed=weekly<0&&daily<0&&h4<0&&!above200&&touch21&&!stoch&&!aboveVWAP;
- return {t,weekly,daily,h4,above200,touch21,aboveVWAP,stoch,div,volume,bull,bear,longConfirmed,shortConfirmed};
+order.forEach(tf=>{const b=document.createElement('button');b.textContent=tf;b.dataset.tf=tf;b.onclick=()=>{selected=tf;load()};$('timeframes').appendChild(b)});
+$('asset').onchange=e=>{asset=e.target.value;load()};$('alertBtn').onclick=()=>{alertOn=!alertOn;$('alertBtn').classList.toggle('on',alertOn);$('alertBtn').textContent=alertOn?'🔔 SCALP ALERT ENABLED':'🔔 ENABLE SCALP ALERT'};
+function ema(a,n){if(!a.length)return[];let k=2/(n+1),v=a[0],o=[v];for(let i=1;i<a.length;i++){v=a[i]*k+v*(1-k);o.push(v)}return o}
+function sma(a,n){return a.map((_,i)=>i<n-1?null:a.slice(i-n+1,i+1).reduce((x,y)=>x+y,0)/n)}
+function rsi(a,n=14){let o=Array(a.length).fill(null),g=0,l=0;for(let i=1;i<a.length;i++){let d=a[i]-a[i-1];g=(g*(n-1)+Math.max(d,0))/n;l=(l*(n-1)+Math.max(-d,0))/n;if(i>=n)o[i]=l===0?100:100-100/(1+g/l)}return o}
+function stochRsi(rs,n=14){let o=Array(rs.length).fill(null);for(let i=n;i<rs.length;i++){let w=rs.slice(i-n+1,i+1).filter(v=>v!=null);if(w.length<n)continue;let lo=Math.min(...w),hi=Math.max(...w);o[i]=hi===lo?50:(rs[i]-lo)/(hi-lo)*100}return o}
+function vwap(c){let pv=0,v=0;return c.map(x=>{pv+=((x.h+x.l+x.c)/3)*x.v;v+=x.v;return pv/v})}
+function divergence(c,rs){if(c.length<25)return 0;let n=c.length, lows=[],highs=[];for(let i=n-12;i<n-2;i++){if(c[i].l<c[i-1].l&&c[i].l<c[i+1].l&&rs[i]!=null)lows.push(i);if(c[i].h>c[i-1].h&&c[i].h>c[i+1].h&&rs[i]!=null)highs.push(i)}if(lows.length>=2){let a=lows[lows.length-2],b=lows[lows.length-1];if(c[b].l<c[a].l&&rs[b]>rs[a])return 1}if(highs.length>=2){let a=highs[highs.length-2],b=highs[highs.length-1];if(c[b].h>c[a].h&&rs[b]<rs[a])return -1}return 0}
+function calc(c){const close=c.map(x=>x.c),e200=ema(close,200),m21=sma(close,21),vw=vwap(c),rs=rsi(close),sr=stochRsi(rs),i=c.length-1;const price=close[i],touch=Math.abs(price-m21[i])/price<.0045,above200=price>e200[i],aboveVW=price>vw[i],bullSt=sr[i]!=null&&sr[i]<50&&(sr[i]>sr[i-1]||sr[i-1]==null),bearSt=sr[i]!=null&&sr[i]>50&&sr[i]<sr[i-1],div=divergence(c,rs),volAvg=c.slice(-21).reduce((s,x)=>s+x.v,0)/Math.min(21,c.length),vol=c[i].v>volAvg;
+return{close,e200,m21,vw,rs,sr,price,touch,above200,aboveVW,bullSt,bearSt,div,vol,volAvg}}
+function biasFor(c){if(c.length<30)return 0;let close=c.map(x=>x.c),e=ema(close,50),e200=ema(close,200),i=c.length-1;return close[i]>e[i]&&e[i]>e200[i]?1:close[i]<e[i]&&e[i]<e200[i]?-1:0}
+async function fetchCandles(id,tf){if(id==='NASDAQ')return null;const key=id+'|'+tf;if(cache[key]&&Date.now()-cache[key].time<15000)return cache[key].data;const g=TF[tf].gran;let end=Math.floor(Date.now()/1000),days=tf==='1M'?3:tf==='5M'?10:tf==='15M'?30:tf==='1H'?90:tf==='4H'?365:tf==='1D'?730:tf==='1W'?3650:3650;let start=end-days*86400;const url='https://api.coinbase.com/api/v3/brokerage/products/'+id+'/candles?start='+start+'&end='+end+'&granularity='+g+'&limit=350';const res=await fetch(url);if(!res.ok)throw Error('Coinbase HTTP '+res.status);const j=await res.json();let data=(j.candles||[]).map(x=>({t:+x.start,o:+x.open,h:+x.high,l:+x.low,c:+x.close,v:+x.volume})).sort((a,b)=>a.t-b.t);cache[key]={time:Date.now(),data};return data}
+async function load(){document.querySelectorAll('.timeframes button').forEach(b=>b.classList.toggle('active',b.dataset.tf===selected));$('status').className='status developing';$('status').textContent='LOADING MARKET DATA';$('dataState').textContent='LIVE MARKET DATA';try{candles=await fetchCandles(asset,selected);if(!candles||candles.length<25)throw Error('No live Coinbase candles for this asset');render()}catch(e){$('dataState').textContent='DATA UNAVAILABLE';$('status').textContent='DATA UNAVAILABLE';$('missing').textContent=e.message;draw(null)}}
+function render(){const a=calc(candles),higher={};for(const tf of ['1W','1D','4H'])higher[tf]=tf===selected?biasFor(candles):0;
+let h4=selected==='4H'?biasFor(candles):0;let daily=selected==='1D'?biasFor(candles):0;let weekly=selected==='1W'?biasFor(candles):0;
+// Use cached higher timeframe data when available; fetch them asynchronously without blocking the selected chart.
+Promise.all(['1W','1D','4H'].map(tf=>fetchCandles(asset,tf).then(c=>biasFor(c)).catch(()=>0))).then(vals=>{higher['1W']=vals[0];higher['1D']=vals[1];higher['4H']=vals[2];score(a,higher)});
+score(a,higher);draw(a)}
+function score(a,h){let bull=0;bull+=h['1W']>0?25:0;bull+=h['1D']>0?25:0;bull+=h['4H']>0?25:0;bull+=(a.above200&&a.touch)?10:0;bull+=a.aboveVW?5:0;bull+=a.bullSt?3:0;bull+=a.div===1?4:0;bull+=a.vol?3:0;let bear=100-bull; $('bullScore').textContent=bull;$('bearScore').textContent=bear;$('period').textContent=selected+' • '+asset;
+let longOk=h['1W']>0&&h['1D']>0&&h['4H']>0&&a.above200&&a.touch&&a.bullSt&&a.aboveVW;let shortOk=h['1W']<0&&h['1D']<0&&h['4H']<0&&!a.above200&&a.touch&&a.bearSt&&!a.aboveVW;
+$('status').className='status '+(longOk?'confirmed':shortOk?'short':'developing');$('status').textContent=longOk?'CONFIRMED SCALP LONG':shortOk?'CONFIRMED SCALP SHORT':'SCALP DEVELOPING';
+$('bias').innerHTML=[['WEEKLY',h['1W']],['DAILY',h['1D']],['4H',h['4H']]].map(x=>'<div>'+x[0]+'<strong class="'+(x[1]>0?'good':x[1]<0?'bad':'neutral')+'">'+(x[1]>0?'BULLISH':x[1]<0?'BEARISH':'NEUTRAL')+'</strong></div>').join('');
+const rows=[['Weekly Bias',h['1W']>0,'+25'],['Daily Bias',h['1D']>0,'+25'],['4H Bias',h['4H']>0,'+25'],['21 MA / 200 EMA',a.above200&&a.touch,'+10'],['VWAP',a.aboveVW,'+5'],['Stoch RSI',a.bullSt,'+3'],['RSI Divergence',a.div===1,'+4'],['Volume',a.vol,'+3']];$('factors').innerHTML=rows.map(r=>'<div class="factor"><span>'+r[0]+'</span><span class="'+(r[1]?'good':'bad')+'">'+(r[1]?'✓ '+r[2]:'✕')+'</span></div>').join('');
+let missing=[];if(h['1W']<=0)missing.push('weekly bullish');if(h['1D']<=0)missing.push('daily bullish');if(h['4H']<=0)missing.push('4H bullish');if(!a.above200)missing.push('price above 200 EMA');if(!a.touch)missing.push('21 MA retest');if(!a.bullSt)missing.push('Stoch RSI');if(!a.aboveVW)missing.push('above VWAP');$('missing').textContent=longOk?'All required long conditions confirmed.':missing.length?'Missing for long: '+missing.join(' • '):'Scalp developing.';
 }
-function render(){
- const a=analysis();document.querySelectorAll('.timeframes button').forEach(b=>b.classList.toggle('active',b.dataset.tf===selected));
- $('bullScore').textContent=a.bull;$('bearScore').textContent=a.bear;$('period').textContent=selected+' • '+asset;
- $('status').className='status '+(a.longConfirmed?'confirmed':a.shortConfirmed?'short':'developing');
- $('status').textContent=a.longConfirmed?'CONFIRMED SCALP LONG':a.shortConfirmed?'CONFIRMED SCALP SHORT':'SCALP DEVELOPING';
- $('clock').textContent=countdown(a.t);
- $('bias').innerHTML=[['WEEKLY',a.weekly],['DAILY',a.daily],['4H',a.h4]].map(x=>'<div>'+x[0]+'<strong class="'+(x[1]>0?'good':'bad')+'">'+(x[1]>0?'BULLISH':'BEARISH')+'</strong></div>').join('');
- const rows=[['Weekly Bias',a.weekly>0,'+25','-25'],['Daily Bias',a.daily>0,'+25','-25'],['4H Bias',a.h4>0,'+25','-25'],['21 MA / 200 EMA',a.above200&&a.touch21,'+10','0'],['VWAP',a.aboveVWAP,'+5','0'],['Stoch RSI',a.stoch,'+3','0'],['RSI Divergence',a.div,'+4','0'],['Volume',a.volume,'+3','0']];
- $('factors').innerHTML=rows.map(r=>'<div class="factor"><span>'+r[0]+'</span><span class="'+(r[1]?'good':'bad')+'">'+(r[1]?'✓ '+r[2]:'✕ '+r[3])+'</span></div>').join('');
- const missing=[];if(a.weekly<0||a.daily<0||a.h4<0)missing.push('higher-timeframe bullish alignment');if(!a.above200)missing.push('price above 200 EMA');if(!a.touch21)missing.push('21 MA retest');if(!a.aboveVWAP)missing.push('price above VWAP');if(!a.stoch)missing.push('Stoch RSI confirmation');
- $('missing').textContent=missing.length?'Missing for long: '+missing.join(' • '):'All required long conditions confirmed.';
- draw(a);
-}
-function countdown(minutes){const now=Date.now(),ms=minutes*60000,remain=ms-(now%ms);const sec=Math.floor(remain/1000);return String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0')}
-function draw(a){
- const c=$('chart'),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*dpr;c.height=h*dpr;const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);
- const n=48,pad=8,step=(w-pad*2)/n;let prices=[],p=50;for(let i=0;i<n;i++){p+=(rand(i)-.48)*7;prices.push(p)}const min=Math.min(...prices)-8,max=Math.max(...prices)+8,sy=v=>h-pad-(v-min)/(max-min)*(h-pad*2);
- x.globalAlpha=.18;x.strokeStyle='#fff';x.lineWidth=1;for(let i=1;i<5;i++){let yy=h*i/5;x.beginPath();x.moveTo(0,yy);x.lineTo(w,yy);x.stroke()}x.globalAlpha=1;
- for(let i=0;i<n;i++){let o=prices[i]-(rand(i+2)-.5)*4,cl=prices[i],hi=Math.max(o,cl)+rand(i+3)*3,lo=Math.min(o,cl)-rand(i+4)*3,xx=pad+i*step; x.strokeStyle='#d7e4da';x.beginPath();x.moveTo(xx+step/2,sy(hi));x.lineTo(xx+step/2,sy(lo));x.stroke();x.fillStyle=cl>=o?'#73e39a':'#ff7474';x.fillRect(xx+step*.18,sy(Math.max(o,cl)),Math.max(2,step*.62),Math.max(2,Math.abs(sy(o)-sy(cl))))}
- line(x,prices.map((v,i)=>v+5+Math.sin(i/4)*2),sy,'#ffd83d',2);line(x,prices.map((v,i)=>v+1.3+Math.sin(i/3)*1.2),sy,'#fff',2);line(x,prices.map((v,i)=>v-2),sy,'#54b9ff',1.5,true);
-}
-function line(x,arr,sy,color,width,dash=false){x.strokeStyle=color;x.lineWidth=width;x.setLineDash(dash?[5,4]:[]);x.beginPath();arr.forEach((v,i)=>{const xx=8+i*((x.canvas.clientWidth-16)/arr.length),yy=sy(v);i?x.lineTo(xx,yy):x.moveTo(xx,yy)});x.stroke();x.setLineDash([])}
-render();setInterval(()=>{$('clock').textContent=countdown(TF.find(x=>x[0]===selected)[1])},1000);
+function countdown(mins){let ms=mins*60000,r=ms-(Date.now()%ms),s=Math.floor(r/1000);return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')}
+function draw(a){const c=$('chart'),dpr=devicePixelRatio||1,w=c.clientWidth,h=c.clientHeight;c.width=w*dpr;c.height=h*dpr;const x=c.getContext('2d');x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,w,h);if(!a)return;x.strokeStyle='#ffffff18';for(let i=1;i<5;i++){x.beginPath();x.moveTo(0,h*i/5);x.lineTo(w,h*i/5);x.stroke()}const n=a.close.length,pad=8,step=(w-pad*2)/n,all=[...a.close,...a.e200.filter(Boolean),...a.m21.filter(Boolean),...a.vw],min=Math.min(...all),max=Math.max(...all),sy=v=>h-pad-(v-min)/(max-min)*(h-pad*2);for(let i=0;i<n;i++){let q=candles[i],xx=pad+i*step;x.strokeStyle='#ddd';x.beginPath();x.moveTo(xx+step/2,sy(q.h));x.lineTo(xx+step/2,sy(q.l));x.stroke();x.fillStyle=q.c>=q.o?'#73e39a':'#ff7474';x.fillRect(xx+step*.18,sy(Math.max(q.o,q.c)),Math.max(2,step*.64),Math.max(2,Math.abs(sy(q.o)-sy(q.c))))}line(x,a.e200,sy,'#ffd83d',2);line(x,a.m21,sy,'#fff',2);line(x,a.vw,sy,'#54b9ff',1.5)}
+function line(x,a,sy,color,w){x.strokeStyle=color;x.lineWidth=w;x.beginPath();let ok=false;a.forEach((v,i)=>{if(v==null)return;let xx=8+i*((x.canvas.clientWidth-16)/a.length),yy=sy(v);if(!ok){x.moveTo(xx,yy);ok=true}else x.lineTo(xx,yy)});x.stroke()}
+setInterval(()=>{$('clock').textContent=countdown(TF[selected].mins)},1000);load();
 </script>
 </body>
 </html>
