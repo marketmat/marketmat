@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Market Mat</title>
 <style>
+.scalp-ladder{margin:6px 0 7px;padding:6px 7px;border:1px solid #6f5b28;border-radius:7px;background:#07140d}
+.ladder-title{font-size:8px;letter-spacing:1px;color:#9daea4;text-align:center;margin-bottom:4px}
+.ladder-row{display:flex;justify-content:space-between;align-items:center;padding:4px 5px;margin:2px 0;border:1px solid #24382c;border-radius:4px;color:#9eada4;font-size:9px;transition:.2s ease}
+.ladder-row b{font-size:9px;color:#65756c}
+.ladder-row.active{color:#07140d;background:#ffd24a;border-color:#ffe58a;box-shadow:0 0 12px #ffd24a66;font-weight:900}
+.ladder-row.active b{color:#07140d}
+.ladder-row.active.pin{background:#ffe26b;box-shadow:0 0 16px #ffe26b99}
+
 :root{--green:#0b3d24;--mat:#197443;--gold:#d4af37;--bull:#5cff88;--bear:#ff6565;--yellow:#ffd83d;--vwap:#54b9ff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 50% 35%,#123b25,#06110b 55%,#030806);color:#f4f4f0;font-family:Inter,Arial,sans-serif}.app{min-height:100vh;padding:14px;max-width:1500px;margin:auto;zoom:.78}
 header{display:flex;align-items:center;gap:10px;margin-bottom:16px}h1{margin:0;font-size:30px;letter-spacing:3px}.brand-logo{width:42px;height:42px;object-fit:contain;display:block;filter:invert(1)}.asset{background:#0d2116;color:white;border:1px solid var(--gold);border-radius:8px;padding:11px 38px 11px 13px;font-size:15px}.live{margin-left:auto;font-size:12px;color:#a8c9b1}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bull);box-shadow:0 0 10px var(--bull);margin-right:7px}
