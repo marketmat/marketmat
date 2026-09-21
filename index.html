@@ -111,7 +111,67 @@ async function scanOtherAssets(){
 function showTradeSetupAlert(setup,kind='setup'){const overlay=$('setupAlert'),inner=overlay.querySelector('.setup-alert-inner'),title=$('setupAlertTitle'),txt=$('setupAlertText');if(!overlay||!inner||!title||!txt||!setup)return;const dir=setup.dir==='short'?'SHORT':'LONG';const tier=setup.tier||'CONFIRMED SCALP';const alertKind=kind==='touch'?'21 MA TOUCH':kind==='entry'?'ENTRY TRIGGERED':'SETUP FOUND';inner.className='setup-alert-inner '+setup.dir+(tier==='GOLDEN SCALP'?' golden':'');title.textContent=dir+' • '+alertKind;const entry=Number(setup.entry),stop=Number(setup.stop),target=Number(setup.target);const message=kind==='touch'?'PRICE TOUCHED THE 21 MA — WATCH FOR ENTRY':kind==='entry'?(setup.entryType==='MOMENTUM'?'MOMENTUM BREAKOUT':'21 MA / VWAP RETEST'):'WATCH FOR 21 MA RETEST';txt.innerHTML=(setup.tf||selected)+' • '+(setup.asset||asset)+'<br>'+setup.count+'/9 ALIGNMENT • '+message+'<br>ENTRY '+(Number.isFinite(entry)?entry.toFixed(2):'--')+' • STOP '+(Number.isFinite(stop)?stop.toFixed(2):'--')+' • TARGET '+(Number.isFinite(target)?target.toFixed(2):'--');clearTimeout(setupAlertTimer);overlay.classList.add('show');overlay.style.display='flex';if(soundOn)refereeWhistle(setup.dir==='long'?'bullish':'bearish',kind==='touch'?'ENTRY':kind==='entry'?(setup.entryType==='MOMENTUM'?'BREAKOUT':'ENTRY'):'21 MA');}
 $('setupAlertClose').onclick=()=>{const o=$('setupAlert');o.classList.remove('show');o.style.display='none';clearTimeout(setupAlertTimer)};
 
-function tradeSetup(a,h,c=candles,tf=selected,assetId=asset){const bull=(h['1W']>0?17:0)+(h['1D']>0?17:0)+(h['4H']>0?16:0)+(a.above200?10:0)+(a.ma21Ok?10:0)+(a.aboveVW?10:0)+(a.bullSt?7:0)+(a.div===1?7:0)+(a.vol?6:0);const bear=(h['1W']<0?17:0)+(h['1D']<0?17:0)+(h['4H']<0?16:0)+(!a.above200?10:0)+(!a.ma21Ok?10:0)+(!a.aboveVW?10:0)+(a.bearSt?7:0)+(a.div===-1?7:0)+(a.vol?6:0);const longChecks=[h['1W']>0,h['1D']>0,h['4H']>0,a.above200,a.ma21Ok,a.aboveVW,a.bullSt,a.div===1,a.vol];const shortChecks=[h['1W']<0,h['1D']<0,h['4H']<0,!a.above200,!a.ma21Ok,!a.aboveVW,a.bearSt,a.div===-1,a.vol];const longCount=longChecks.filter(Boolean).length,shortCount=shortChecks.filter(Boolean).length;const longStructureOk=a.ma21Above200;const shortStructureOk=!a.ma21Above200;const dir=longCount>=shortCount&&longCount>=7&&longStructureOk?'long':shortCount>longCount&&shortCount>=7&&shortStructureOk?'short':null;if(!dir)return null;const aligned=dir==='long'?longCount:shortCount;const tier=aligned===9?'GOLDEN SCALP':'CONFIRMED SCALP';const entry=a.price;const swing=recentSwing(c,dir,12);let stop=dir==='long'?Math.min(swing,a.m21[a.m21.length-1]||swing):Math.max(swing,a.m21[a.m21.length-1]||swing);const minRisk=entry*.0025;const risk=dir==='long'?entry-stop:stop-entry;if(risk<minRisk)stop=dir==='long'?entry-minRisk:entry+minRisk;const finalRisk=Math.abs(entry-stop);const target=dir==='long'?entry+finalRisk*3:entry-finalRisk*3;const i=c.length-1,ma=a.m21[i],vw=a.vw[i],last=c[i];const ma21Touch=Number.isFinite(ma)&&last.l<=ma&&last.h>=ma;const zoneLow=Math.min(ma,vw),zoneHigh=Math.max(ma,vw),range=Math.max(1e-9,last.h-last.l),body=Math.abs(last.c-last.o),bodyPct=body/range,closePos=(last.c-last.l)/range;const zoneTouch=last.l<=zoneHigh&&last.h>=zoneLow;const reclaim=dir==='long'?last.c>zoneHigh:last.c<zoneLow;const candleConfirm=dir==='long'?last.c>last.o&&bodyPct>=.35&&closePos>=.65:last.c<last.o&&bodyPct>=.35&&closePos<=.35;const boundary=dir==='long'?zoneHigh:zoneLow;const extension=Math.abs(last.c-boundary)/Math.max(1,last.c);const notChasing=extension<=.005;const retestReady=zoneTouch&&reclaim&&candleConfirm&&notChasing;const lookback=5,prev=c.slice(Math.max(0,c.length-lookback-1),c.length-1);const priorHigh=prev.length?Math.max(...prev.map(x=>x.h)):last.h;const priorLow=prev.length?Math.min(...prev.map(x=>x.l)):last.l;const breakout=dir==='long'?last.c>priorHigh:last.c<priorLow;const avgVol=prev.length?prev.reduce((s,x)=>s+x.v,0)/prev.length:0;const volumeConfirm=avgVol>0&&last.v>=avgVol*1.1;const momentumStoch=dir==='long'?a.bullSt: a.bearSt;const momentumDivergence=dir==='long'?a.div!==-1:a.div!==1;const momentumReady=breakout&&candleConfirm&&volumeConfirm&&momentumStoch&&momentumDivergence&&notChasing;const entryReady=retestReady||momentumReady;const entryType=retestReady?'RETEST':momentumReady?'MOMENTUM':null;return{dir,count:aligned,tier,score:dir==='long'?bull:bear,entry,stop,target,risk:finalRisk,asset:assetId,tf,entryReady,entryType,ma21Touch,zoneTouch,reclaim,candleConfirm,notChasing,ma21Above200:a.ma21Above200,ma21:ma,vwap:vw,zoneLow,zoneHigh,breakout,volumeConfirm,momentumReady}}
+function tradeSetup(a,h,c=candles,tf=selected,assetId=asset){
+  const bull=(h['1W']>0?17:0)+(h['1D']>0?17:0)+(h['4H']>0?16:0)+(a.above200?10:0)+(a.ma21Ok?10:0)+(a.aboveVW?10:0)+(a.bullSt?7:0)+(a.div===1?7:0)+(a.vol?6:0);
+  const bear=(h['1W']<0?17:0)+(h['1D']<0?17:0)+(h['4H']<0?16:0)+(!a.above200?10:0)+(!a.ma21Ok?10:0)+(!a.aboveVW?10:0)+(a.bearSt?7:0)+(a.div===-1?7:0)+(a.vol?6:0);
+  const longChecks=[h['1W']>0,h['1D']>0,h['4H']>0,a.above200,a.ma21Ok,a.aboveVW,a.bullSt,a.div===1,a.vol];
+  const shortChecks=[h['1W']<0,h['1D']<0,h['4H']<0,!a.above200,!a.ma21Ok,!a.aboveVW,a.bearSt,a.div===-1,a.vol];
+  const longCount=longChecks.filter(Boolean).length,shortCount=shortChecks.filter(Boolean).length;
+  const longStructureOk=a.ma21Above200,shortStructureOk=!a.ma21Above200;
+  const dir=longCount>=shortCount&&longCount>=7&&longStructureOk?'long':shortCount>longCount&&shortCount>=7&&shortStructureOk?'short':null;
+  if(!dir)return null;
+  const aligned=dir==='long'?longCount:shortCount;
+  const tier=aligned===9?'GOLDEN SCALP':'CONFIRMED SCALP';
+  const i=c.length-1;
+  const ma=a.m21[i];
+  const last=c[i];
+  if(!Number.isFinite(ma)||!last)return null;
+
+  // Trade-set entries are anchored to the 21 MA retest, not the current price.
+  // The acceptable retest area is the 21 MA +/- 1 standard deviation of the
+  // most recent 21 closes.
+  const stdWindow=c.slice(Math.max(0,i-20),i+1).map(x=>x.c).filter(Number.isFinite);
+  const stdMean=stdWindow.length?stdWindow.reduce((s,v)=>s+v,0)/stdWindow.length:ma;
+  const variance=stdWindow.length?stdWindow.reduce((s,v)=>s+(v-stdMean)*(v-stdMean),0)/stdWindow.length:0;
+  const retestStd=Math.sqrt(Math.max(0,variance));
+  const retestLow=ma-retestStd;
+  const retestHigh=ma+retestStd;
+  const entry=ma;
+
+  const swing=recentSwing(c,dir,12);
+  let stop=dir==='long'?Math.min(swing,ma||swing):Math.max(swing,ma||swing);
+  const minRisk=entry*.0025;
+  const risk=dir==='long'?entry-stop:stop-entry;
+  if(risk<minRisk)stop=dir==='long'?entry-minRisk:entry+minRisk;
+  const finalRisk=Math.abs(entry-stop);
+  const target=dir==='long'?entry+finalRisk*3:entry-finalRisk*3;
+
+  const vw=a.vw[i];
+  const ma21Touch=last.l<=ma&&last.h>=ma;
+  const withinOneStd=last.c>=retestLow&&last.c<=retestHigh;
+  const zoneLow=Math.min(ma,vw),zoneHigh=Math.max(ma,vw);
+  const range=Math.max(1e-9,last.h-last.l),body=Math.abs(last.c-last.o),bodyPct=body/range,closePos=(last.c-last.l)/range;
+  const zoneTouch=last.l<=zoneHigh&&last.h>=zoneLow;
+  const reclaim=dir==='long'?last.c>zoneHigh:last.c<zoneLow;
+  const candleConfirm=dir==='long'?last.c>last.o&&bodyPct>=.35&&closePos>=.65:last.c<last.o&&bodyPct>=.35&&closePos<=.35;
+  const boundary=dir==='long'?zoneHigh:zoneLow;
+  const extension=Math.abs(last.c-boundary)/Math.max(1,last.c);
+  const notChasing=extension<=.005;
+  const retestReady=ma21Touch&&withinOneStd&&zoneTouch&&reclaim&&candleConfirm&&notChasing;
+
+  const lookback=5,prev=c.slice(Math.max(0,c.length-lookback-1),c.length-1);
+  const priorHigh=prev.length?Math.max(...prev.map(x=>x.h)):last.h;
+  const priorLow=prev.length?Math.min(...prev.map(x=>x.l)):last.l;
+  const breakout=dir==='long'?last.c>priorHigh:last.c<priorLow;
+  const avgVol=prev.length?prev.reduce((s,x)=>s+x.v,0)/prev.length:0;
+  const volumeConfirm=avgVol>0&&last.v>=avgVol*1.1;
+  const momentumStoch=dir==='long'?a.bullSt:a.bearSt;
+  const momentumDivergence=dir==='long'?a.div!==-1:a.div!==1;
+  const momentumReady=breakout&&candleConfirm&&volumeConfirm&&momentumStoch&&momentumDivergence&&notChasing;
+  const entryReady=retestReady||momentumReady;
+  const entryType=retestReady?'RETEST':momentumReady?'MOMENTUM':null;
+  return{dir,count:aligned,tier,score:dir==='long'?bull:bear,entry,stop,target,risk:finalRisk,asset:assetId,tf,entryReady,entryType,ma21Touch,withinOneStd,retestStd,retestLow,retestHigh,zoneTouch,reclaim,candleConfirm,notChasing,ma21Above200:a.ma21Above200,ma21:ma,vwap:vw,zoneLow,zoneHigh,breakout,volumeConfirm,momentumReady};
+}
 function detectMarketStructure(c){
   const n=c.length;if(n<10)return{trend:'Insufficient data',trendClass:'neutral',patterns:[]};
   const highs=[],lows=[];
