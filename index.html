@@ -197,8 +197,9 @@ function detectMarketStructure(c){
     const recentRange=Math.max(c[n-1].h,c[n-2].h,c[n-3].h)-Math.min(c[n-1].l,c[n-2].l,c[n-3].l);
     const priorRange=Math.max(prevH.p,lastH.p)-Math.min(prevL.p,lastL.p);
     const contracting=recentRange<priorRange*.75;
-    if(risingLow&&fallingHigh&&contracting)patterns.push({name:'DESCENDING TRIANGLE',state:c[n-1].c<lastL.p?'CONFIRMED':'FORMING',cls:'bear'});
-    if(fallingHigh&&risingLow===false&&contracting)patterns.push({name:'ASCENDING TRIANGLE',state:c[n-1].c>lastH.p?'CONFIRMED':'FORMING',cls:'bull'});
+    const flatHigh=pct(lastH.p,prevH.p)<=.012,flatLow=pct(lastL.p,prevL.p)<=.012;
+    if(flatLow&&fallingHigh&&contracting)patterns.push({name:'DESCENDING TRIANGLE',state:c[n-1].c<lastL.p?'CONFIRMED':'FORMING',cls:'bear'});
+    if(flatHigh&&risingLow&&contracting)patterns.push({name:'ASCENDING TRIANGLE',state:c[n-1].c>lastH.p?'CONFIRMED':'FORMING',cls:'bull'});
     const slopeH=(lastH.p-prevH.p)/(lastH.i-prevH.i||1),slopeL=(lastL.p-prevL.p)/(lastL.i-prevL.i||1);
     if(slopeH<0&&slopeL>0)patterns.push({name:'BEAR PENNANT',state:contracting?'FORMING':'WATCH',cls:'bear'});
     if(slopeH>0&&slopeL<0)patterns.push({name:'BULL PENNANT',state:contracting?'FORMING':'WATCH',cls:'bull'});
