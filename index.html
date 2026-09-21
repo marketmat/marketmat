@@ -121,12 +121,14 @@ function tradeSetup(a,h,c=candles,tf=selected,assetId=asset){
   const longCount=longChecks.filter(Boolean).length,shortCount=shortChecks.filter(Boolean).length;
   const longStructureOk=a.ma21Above200,shortStructureOk=!a.ma21Above200;
   const weeklyAllowsLong=h['1W']>=0,weeklyAllowsShort=h['1W']<=0;
-  const longEligible=weeklyAllowsLong&&longCount>=7&&longStructureOk;
-  const shortEligible=weeklyAllowsShort&&shortCount>=7&&shortStructureOk;
+  const neutralWeekly=h['1W']===0;
+  const longEligible=longStructureOk&&((h['1W']>0&&longCount>=7)||(neutralWeekly&&longCount>=6));
+  const shortEligible=shortStructureOk&&((h['1W']<0&&shortCount>=7)||(neutralWeekly&&shortCount>=6));
   const dir=longEligible&&(!shortEligible||longCount>=shortCount)?'long':shortEligible?'short':null;
   if(!dir)return null;
   const aligned=dir==='long'?longCount:shortCount;
-  const tier=aligned===9?'GOLDEN SCALP':'CONFIRMED SCALP';
+  const neutralSetup=neutralWeekly&&aligned===6;
+  const tier=neutralSetup?'NEUTRAL WEEKLY • 6/9 TRADE SETUP':aligned===9?'GOLDEN SCALP':'CONFIRMED SCALP';
   const i=c.length-1;
   const ma=a.m21[i];
   const last=c[i];
