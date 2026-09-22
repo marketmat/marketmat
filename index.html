@@ -126,7 +126,7 @@ function updateScalpLadder(a,h){const bull=[h['1W']>0,h['1D']>0,h['4H']>0,a.abov
 let lastSetupKey='';let setupAlertTimer=0;let lastQualifiedKey='';let hasEvaluatedSetup=false;let previousSetupState=null;let lastAlertCandleKey='';let lastMa21TouchAlertKey='';let stableSetupState=null;
 const scannerState={};
 let scannerBusy=false;
-const SCAN_ASSETS=['BTC-USD','ETH-USD','SOL-USD','HYPE-USD'];
+const SCAN_ASSETS=['BTC-USD','ETH-USD','SOL-USD','HYPE-USD','NASDAQ'];
 async function scanOtherAssets(){
   if(scannerBusy)return;
   scannerBusy=true;
@@ -142,13 +142,28 @@ async function scanOtherAssets(){
         higher['1W']=vals[0];higher['1D']=vals[1];higher['4H']=vals[2];
         const setup=tradeSetup(a,higher,c,selected,id);
         const candleKey=id+'|'+selected+'|'+c[c.length-1].t;
-        const state=scannerState[id+'|'+selected]||{evaluated:false,key:'',dir:null,count:0};
+        const state=scannerState[id+'|'+selected]||{evaluated:false,key:'',dir:null,count:0,entryKey:''};
         const isNewCandle=candleKey!==state.key;
+
+        // Cross-asset entry monitoring runs independently of the asset currently
+        // displayed. A 21 MA/VWAP retest can happen inside an open candle, so
+        // entry alerts must NOT wait for the next candle close.
+        if(setup&&setup.entryReady){
+          const entryKey=candleKey+'|'+setup.dir+'|'+(setup.entryType||'RETEST');
+          if(state.entryKey!==entryKey){
+            state.entryKey=entryKey;
+            showTradeSetupAlert(setup,'entry');
+          }
+        }
+
         if(isNewCandle){
           if(setup){
             const thresholdCross=!state.evaluated||state.dir!==setup.dir||state.count<7;
             const goldenUpgrade=state.evaluated&&state.dir===setup.dir&&state.count<9&&setup.count===9;
-            if((!state.evaluated&&setup.count>=7)||(state.evaluated&&(thresholdCross||goldenUpgrade))){
+            // If an entry already fired for this candle, don't immediately
+            // duplicate it with a generic setup alert.
+            const entryAlreadyFired=state.entryKey&&state.entryKey.startsWith(candleKey+'|');
+            if(!entryAlreadyFired&&((!state.evaluated&&setup.count>=7)||(state.evaluated&&(thresholdCross||goldenUpgrade)))){
               showTradeSetupAlert(setup,'setup');
             }
             state.dir=setup.dir;state.count=setup.count;
@@ -156,6 +171,7 @@ async function scanOtherAssets(){
             const currentLong=[higher['1W']>0,higher['1D']>0,higher['4H']>0,a.above200,a.ma21Ok,a.aboveVW,a.bullSt,a.div===1,a.vol].filter(Boolean).length;
             const currentShort=[higher['1W']<0,higher['1D']<0,higher['4H']<0,!a.above200,!a.ma21Ok,!a.aboveVW,a.bearSt,a.div===-1,a.vol].filter(Boolean).length;
             state.dir=currentLong>=currentShort?'long':'short';state.count=Math.max(currentLong,currentShort);
+            state.entryKey='';
           }
           state.key=candleKey;state.evaluated=true;
           scannerState[id+'|'+selected]=state;
