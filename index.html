@@ -296,7 +296,7 @@ function detectMarketStructure(c){
 }
 let lastModelAlertKey='';let lastPatternAlertKey='';
 function detectTweezerPattern(c,tf){
-  if(!Array.isArray(c)||c.length<4||!['1H','2H','4H'].includes(tf))return null;
+  if(!Array.isArray(c)||c.length<4||!['1H','2H','4H','1D'].includes(tf))return null;
   const i=c.length-2; // most recently CLOSED candle
   const a=c[i-1],b=c[i];
   if(!a||!b)return null;
@@ -339,7 +339,7 @@ function detectTweezerPattern(c,tf){
 }
 let lastTweezerAlertKey='';
 function scanTweezerPatterns(id){
-  for(const tf of ['1H','2H','4H']){
+  for(const tf of ['1H','2H','4H','1D']){
     fetchCandles(id,tf).then(c=>{
       const p=detectTweezerPattern(c,tf);
       if(!p)return;
@@ -348,13 +348,37 @@ function scanTweezerPatterns(id){
       lastTweezerAlertKey=key;
       const overlay=$('setupAlert'),inner=overlay?.querySelector('.setup-alert-inner'),title=$('setupAlertTitle'),txt=$('setupAlertText');
       if(!overlay||!inner||!title||!txt)return;
+
+      // A 4H/daily tweezer gets a full 3:1 plan using the pattern wick as
+      // the invalidation level. Lower timeframes remain pattern-only alerts.
+      const highTf=tf==='4H'||tf==='1D';
+      const a=p.candleTime?c.find(x=>x.t===p.candleTime):null;
+      const b=a?c[c.indexOf(a)-1]:null;
+      let entry=a?.c||null,stop=null,target=null,risk=null;
+      if(highTf&&a&&b){
+        if(p.cls==='bull'){
+          const wickLow=Math.min(a.l,b.l);
+          stop=wickLow;
+          risk=entry-stop;
+          if(risk>0)target=entry+risk*3;
+        }else{
+          const wickHigh=Math.max(a.h,b.h);
+          stop=wickHigh;
+          risk=stop-entry;
+          if(risk>0)target=entry-risk*3;
+        }
+      }
+      const plan=highTf&&Number.isFinite(entry)&&Number.isFinite(stop)&&Number.isFinite(target)&&risk>0
+        ? '<br><strong>3:1 TRADE SETUP</strong><br>ENTRY '+entry.toFixed(2)+' • STOP '+stop.toFixed(2)+' • TARGET '+target.toFixed(2)
+        : '';
+
       inner.className='setup-alert-inner '+(p.cls==='bull'?'long':'short');
-      title.textContent=p.type+' • '+p.state;
-      txt.innerHTML=tf+' • '+id+'<br>'+p.message+'<br><span style="font-size:11px;opacity:.8">Pattern alert only — wait for your Market Mat trade setup/entry criteria before entering.</span>';
+      title.textContent=highTf?'3:1 '+p.type+' • '+p.state:p.type+' • '+p.state;
+      txt.innerHTML=tf+' • '+id+'<br>'+p.message+plan+'<br><span style="font-size:11px;opacity:.8">Stop is placed beyond the tweezer wicks. Use proper risk management and size the position from the stop distance.</span>';
       clearTimeout(setupAlertTimer);
       overlay.classList.add('show');overlay.style.display='flex';
       if(soundOn)refereeWhistle(p.cls==='bull'?'bullish':'bearish','TWEEZER');
-      notifyMarketMat('🔔 MARKET MAT • '+p.type,id+' • '+tf+' • '+p.state);
+      notifyMarketMat('🔔 MARKET MAT • '+(highTf?'3:1 ':'')+p.type,id+' • '+tf+' • '+p.state+(highTf?' • STOP BELOW/ABOVE WICKS • 3:1 TARGET':''));
     }).catch(e=>console.warn('Tweezer scan failed for '+id+' '+tf,e));
   }
 }
