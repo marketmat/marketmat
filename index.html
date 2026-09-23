@@ -151,6 +151,26 @@ function checkPossibleModelReclaim(id,tf,c,a){
   if(p<1||!Number.isFinite(a.e200[i])||!Number.isFinite(a.e200[p])||!Number.isFinite(a.m21[i])||!Number.isFinite(a.m21[p]))return;
   const lookbackStart=Math.max(0,p-24);
 
+  // Early THE MODEL warning: alert when the bullish model is forming even
+  // when the original 200/21 crossover sequence happened too far back.
+  // This is a POSSIBILITY alert, not a confirmed trade signal.
+  const model=detectTheModel(c,a,tf);
+  if(model.forming&&model.dir==='long'){
+    const key=id+'|'+tf+'|'+c[i].t+'|POSSIBLE_MODEL_FORMING_BULL';
+    if(!scannerState[key]){
+      scannerState[key]=true;
+      modelWatchState[id+'|'+tf]={dir:'long',startedCandle:c[i].t,alertedCandle:null};
+      const entry=c[i].c;
+      const stop=Number.isFinite(a.e200[i])?a.e200[i]*0.9975:null;
+      const risk=Number.isFinite(stop)?entry-stop:null;
+      const target=Number.isFinite(risk)&&risk>0?entry+risk*3:null;
+      const body=tf+' • '+id+'<br>Price is holding ABOVE the 200 EMA while the 21 MA is consolidating through price.<br><strong>🟢 POSSIBLE MODEL • EARLY WARNING</strong><br>This is a possibility alert — wait for MODEL confirmation and normal entry confirmation.<br><strong>WATCH 21 MA / VWAP RETEST</strong>'+(Number.isFinite(stop)&&Number.isFinite(target)?'<br>Reference 3:1 levels • ENTRY '+entry.toFixed(2)+' • STOP '+stop.toFixed(2)+' • TARGET '+target.toFixed(2):'');
+      pushMarketAlert('🟢 POSSIBLE MODEL • '+id,body,'long','MODEL',key);
+      notifyMarketMat('🟢 MARKET MAT • POSSIBLE MODEL',id+' • '+tf+' • bullish model may be forming',key);
+      if(soundOn)buzzer();
+    }
+  }
+
   // Bullish reclaim: price dumped below the 200, then reclaimed it while the
   // 21 MA crossed back above the 200.
   let dumpIndex=-1;
