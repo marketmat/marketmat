@@ -225,8 +225,13 @@ function checkModelTradeAlert(id,tf,c,a){
   if(touches<2||touches>3||state.alertedCandle===c[i].t)return;
   const dir=state.dir==='long'?'long':'short';
   const side=dir==='long'?'above':'below';
+  const e200=a.e200[i],entry=c[i].c;
+  const stop=dir==='long'?e200*0.9975:e200*1.0025;
+  const risk=Math.abs(entry-stop);
+  if(!Number.isFinite(e200)||!Number.isFinite(entry)||risk<=0)return;
+  const target=dir==='long'?entry+risk*3:entry-risk*3;
   const title=dir==='long'?'🚨 TRADE ALERT • THE MODEL':'🚨 TRADE ALERT • THE BEARISH MODEL';
-  const body=tf+' • '+id+'<br>'+touches+' touches of the 21 MA while price consolidates '+side+' the 200 EMA.<br><strong>'+(dir==='long'?'THE MODEL IS SET — WATCH FOR ENTRY':'THE BEARISH MODEL IS SET — WATCH FOR ENTRY')+'</strong><br>Wait for your normal entry confirmation at the 21 MA / VWAP.';
+  const body=tf+' • '+id+'<br>'+touches+' touches of the 21 MA while price consolidates '+side+' the 200 EMA.<br><strong>'+(dir==='long'?'THE MODEL IS SET':'THE BEARISH MODEL IS SET')+'</strong><br><strong>3:1 TRADE SETUP</strong> • ENTRY '+entry.toFixed(2)+' • STOP '+stop.toFixed(2)+' ('+(dir==='long'?'BELOW':'ABOVE')+' 200 EMA) • TARGET '+target.toFixed(2)+'<br>Risk = 1R • Target = 3R. Wait for your normal entry confirmation at the 21 MA / VWAP.';
   const alertKey=id+'|'+tf+'|'+c[i].t+'|TRADE_ALERT_MODEL|'+dir;
   state.alertedCandle=c[i].t;
   pushMarketAlert(title,body,dir,'MODEL',alertKey);
