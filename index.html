@@ -100,9 +100,21 @@ function detectTheModel(c,a){
   const window=c.slice(start,i+1),m21=a.m21,e200=a.e200;
   const valid=window.filter((x,j)=>Number.isFinite(m21[start+j])&&Number.isFinite(e200[start+j]));
   if(valid.length<8)return{forming:false,confirmed:false,dir:null,holds:0,reason:'Insufficient MA data'};
-  const above200=valid.filter((x,j)=>x.c>e200[start+j]).length>=Math.ceil(valid.length*.75);
+
+  // THE MODEL is a two-sided consolidation pattern.  Bullish = price consolidates
+  // above the 200 while the 21 runs through price. Bearish is the mirror image:
+  // price consolidates below the 200 while the 21 runs through price and rolls
+  // toward/below the 200.  The bearish version is allowed to FORM before the
+  // actual 21/200 cross so the early transition is visible.
+  const priceAbove200=valid.filter((x,j)=>x.c>e200[start+j]).length>=Math.ceil(valid.length*.75);
+  const priceBelow200=valid.filter((x,j)=>x.c<e200[start+j]).length>=Math.ceil(valid.length*.75);
   const maAbove200=Number.isFinite(m21[i])&&Number.isFinite(e200[i])&&m21[i]>e200[i];
-  const near21=valid.filter((x,j)=>Math.abs(x.c-m21[start+j])/Math.max(x.c,1)<=.008).length;
+  const maBelow200=Number.isFinite(m21[i])&&Number.isFinite(e200[i])&&m21[i]<e200[i];
+  const maGap=Math.abs(m21[i]-e200[i])/Math.max(Math.abs(e200[i]),1);
+  const priorMa=m21[Math.max(start,i-3)],priorE200=e200[Math.max(start,i-3)];
+  const maRollingDown=Number.isFinite(priorMa)&&Number.isFinite(priorE200)&&m21[i]<priorMa&&e200[i]>=priorE200;
+  const maRollingUp=Number.isFinite(priorMa)&&Number.isFinite(priorE200)&&m21[i]>priorMa&&e200[i]<=priorE200;
+  const near21=valid.filter((x,j)=>Math.abs(x.c-m21[start+j])/Math.max(Math.abs(x.c),1)<=.008).length;
   const holds=valid.filter((x,j)=>x.l<=m21[start+j]*1.003&&x.h>=m21[start+j]*.997).length;
   const ranges=valid.map(x=>Math.max(x.h-x.l,1));
   const avgRange=ranges.reduce((s,v)=>s+v,0)/ranges.length;
@@ -110,9 +122,17 @@ function detectTheModel(c,a){
   const compressed=avgRange>0&&totalRange/avgRange<=8;
   const slopeBase=m21[start],slopeNow=m21[i];
   const flat21=Number.isFinite(slopeBase)&&Number.isFinite(slopeNow)&&Math.abs(slopeNow-slopeBase)/Math.max(Math.abs(slopeBase),1)<=.012;
-  const forming=above200&&maAbove200&&near21>=Math.ceil(valid.length*.5)&&holds>=3&&compressed&&flat21;
-  const breakout=forming&&((c[i].c>c[i-1].h&&c[i].c>m21[i])||(c[i].c<c[i-1].l&&c[i].c<m21[i]));
-  return{forming,confirmed:breakout,dir:above200?'long':null,holds,near21,compressed,flat21};
+
+  const bullishForming=priceAbove200&&maAbove200&&near21>=Math.ceil(valid.length*.5)&&holds>=3&&compressed&&flat21;
+  const bearishPreCross=priceBelow200&&near21>=Math.ceil(valid.length*.5)&&holds>=3&&compressed&&
+    (maBelow200||(maGap<=.0035&&maRollingDown)||maRollingDown);
+  const forming=bullishForming||bearishPreCross;
+  const dir=bullishForming&&!bearishPreCross?'long':bearishPreCross&&!bullishForming?'short':
+    (bearishPreCross&&maBelow200?'short':'long');
+  const bullishBreakout=forming&&dir==='long'&&(c[i].c>c[i-1].h&&c[i].c>m21[i]);
+  const bearishBreakout=forming&&dir==='short'&&(c[i].c<c[i-1].l&&c[i].c<m21[i]);
+  const confirmed=bullishBreakout||bearishBreakout;
+  return{forming,confirmed,dir,holds,near21,compressed,flat21,maGap,maRollingDown,maRollingUp};
 }
 function atr(c,n=14){const out=Array(c.length).fill(null);if(!c.length)return out;let tr=0;for(let i=0;i<c.length;i++){const prev=i?c[i-1].c:c[i].c;const r=Math.max(c[i].h-c[i].l,Math.abs(c[i].h-prev),Math.abs(c[i].l-prev));if(i===0)tr=r;else tr=((tr*(n-1))+r)/n;if(i>=n-1)out[i]=tr}return out}
 function higherTimeframeExtension(c,tf){if(!Array.isArray(c)||c.length<220)return{tf,extended:false,severe:false,price:null,ma21:null,e200:null,atr:null,d21:null,d200:null};const close=c.map(x=>x.c),m21=ema(close,21),e200=ema(close,200),av=atr(c,14),i=c.length-1,price=close[i],ma21=m21[i],e200v=e200[i],atrv=av[i];if(![price,ma21,e200v,atrv].every(Number.isFinite)||atrv<=0)return{tf,extended:false,severe:false,price,ma21,e200:e200v,atr:atrv,d21:null,d200:null};const d21=(price-ma21)/atrv,d200=(price-e200v)/atrv;const bullish=price>ma21&&price>e200v&&ma21>e200v;const extended=bullish&&(d21>=1.5||d200>=2.5);const severe=bullish&&d21>=2.25&&d200>=3;return{tf,extended,severe,price,ma21,e200:e200v,atr:atrv,d21,d200,bullish}}
@@ -181,7 +201,7 @@ async function scanOtherAssets(){
     }
   }finally{scannerBusy=false}
 }
-function showTradeSetupAlert(setup,kind='setup'){const overlay=$('setupAlert'),inner=overlay.querySelector('.setup-alert-inner'),title=$('setupAlertTitle'),txt=$('setupAlertText');if(!overlay||!inner||!title||!txt||!setup)return;const dir=setup.dir==='short'?'SHORT':'LONG';const tier=setup.tier||'CONFIRMED SCALP';const alertKind=kind==='touch'?'21 MA TOUCH':kind==='entry'?'ENTRY TRIGGERED':kind==='model'?'THE MODEL':'SETUP FOUND';inner.className='setup-alert-inner '+setup.dir+(tier==='GOLDEN SCALP'?' golden':'');title.textContent=dir+' • '+alertKind;const entry=Number(setup.entry),stop=Number(setup.stop),target=Number(setup.target);const message=kind==='touch'?'PRICE TOUCHED THE 21 MA — WATCH FOR ENTRY':kind==='entry'?(setup.entryType==='MOMENTUM'?'MOMENTUM BREAKOUT':'21 MA / VWAP RETEST'):kind==='model'?'21 MA CONSOLIDATION ABOVE 200 EMA — THE MODEL IS ACTIVE':'WATCH FOR 21 MA RETEST';txt.innerHTML=(setup.tf||selected)+' • '+(setup.asset||asset)+'<br>'+setup.count+'/9 ALIGNMENT • '+message+'<br>ENTRY '+(Number.isFinite(entry)?entry.toFixed(2):'--')+' • STOP '+(Number.isFinite(stop)?stop.toFixed(2):'--')+' • TARGET '+(Number.isFinite(target)?target.toFixed(2):'--')+'<div class="risk-reminder">⚠ RISK MANAGEMENT REMINDER<br><strong>Size the position from your preset risk and stop distance. Never chase the entry, move your stop farther away, or risk more than planned.</strong></div>';clearTimeout(setupAlertTimer);overlay.classList.add('show');overlay.style.display='flex';if(soundOn)refereeWhistle(setup.dir==='long'?'bullish':'bearish',kind==='touch'?'ENTRY':kind==='entry'?(setup.entryType==='MOMENTUM'?'BREAKOUT':'ENTRY'):'21 MA');notifyMarketMat('🚨 MARKET MAT • '+dir+' '+alertKind,(setup.tf||selected)+' • '+setup.count+'/9 • ⚠ RISK MANAGEMENT: size from risk + stop distance');}
+function showTradeSetupAlert(setup,kind='setup'){const overlay=$('setupAlert'),inner=overlay.querySelector('.setup-alert-inner'),title=$('setupAlertTitle'),txt=$('setupAlertText');if(!overlay||!inner||!title||!txt||!setup)return;const dir=setup.dir==='short'?'SHORT':'LONG';const tier=setup.tier||'CONFIRMED SCALP';const alertKind=kind==='touch'?'21 MA TOUCH':kind==='entry'?'ENTRY TRIGGERED':kind==='model'?'THE MODEL':'SETUP FOUND';inner.className='setup-alert-inner '+setup.dir+(tier==='GOLDEN SCALP'?' golden':'');title.textContent=dir+' • '+alertKind;const entry=Number(setup.entry),stop=Number(setup.stop),target=Number(setup.target);const message=kind==='touch'?'PRICE TOUCHED THE 21 MA — WATCH FOR ENTRY':kind==='entry'?(setup.entryType==='MOMENTUM'?'MOMENTUM BREAKOUT':'21 MA / VWAP RETEST'):kind==='model'?(setup.dir==='short'?'21 MA CONSOLIDATION BELOW 200 EMA — BEARISH MODEL IS ACTIVE':'21 MA CONSOLIDATION ABOVE 200 EMA — BULLISH MODEL IS ACTIVE'):'WATCH FOR 21 MA RETEST';txt.innerHTML=(setup.tf||selected)+' • '+(setup.asset||asset)+'<br>'+setup.count+'/9 ALIGNMENT • '+message+'<br>ENTRY '+(Number.isFinite(entry)?entry.toFixed(2):'--')+' • STOP '+(Number.isFinite(stop)?stop.toFixed(2):'--')+' • TARGET '+(Number.isFinite(target)?target.toFixed(2):'--')+'<div class="risk-reminder">⚠ RISK MANAGEMENT REMINDER<br><strong>Size the position from your preset risk and stop distance. Never chase the entry, move your stop farther away, or risk more than planned.</strong></div>';clearTimeout(setupAlertTimer);overlay.classList.add('show');overlay.style.display='flex';if(soundOn)refereeWhistle(setup.dir==='long'?'bullish':'bearish',kind==='touch'?'ENTRY':kind==='entry'?(setup.entryType==='MOMENTUM'?'BREAKOUT':'ENTRY'):'21 MA');notifyMarketMat('🚨 MARKET MAT • '+dir+' '+alertKind,(setup.tf||selected)+' • '+setup.count+'/9 • ⚠ RISK MANAGEMENT: size from risk + stop distance');}
 $('setupAlertClose').onclick=()=>{const o=$('setupAlert');o.classList.remove('show');o.style.display='none';clearTimeout(setupAlertTimer)};
 
 function tradeSetup(a,h,c=candles,tf=selected,assetId=asset){
@@ -200,7 +220,7 @@ function tradeSetup(a,h,c=candles,tf=selected,assetId=asset){
   const aligned=dir==='long'?longCount:shortCount;
   const neutralSetup=neutralWeekly&&aligned===6;
   const model=detectTheModel(c,a);
-  const tier=model.forming&&(neutralSetup||aligned>=7)?'THE MODEL • TRADE SETUP':neutralSetup?'NEUTRAL WEEKLY • 6/9 TRADE SETUP':aligned===9?'GOLDEN SCALP':'CONFIRMED SCALP';
+  const tier=model.forming&&(neutralSetup||aligned>=7)?(model.dir==='short'?'BEARISH MODEL • TRADE SETUP':'THE MODEL • TRADE SETUP'):neutralSetup?'NEUTRAL WEEKLY • 6/9 TRADE SETUP':aligned===9?'GOLDEN SCALP':'CONFIRMED SCALP';
   const i=c.length-1;
   const ma=a.m21[i];
   const last=c[i];
@@ -399,7 +419,7 @@ function showPatternAlert(pattern){
 function notifyMarketMat(title,body){
   try{if('Notification' in window&&Notification.permission==='granted')new Notification(title,{body,icon:'/icon-192.png',tag:'market-mat'});}catch(_){}
 }
-function renderMarketStructure(){const el=$('marketStructure');if(!el)return;const s=detectMarketStructure(candles),a=calc(candles),model=detectTheModel(candles,a),items=[{name:'Swing Structure',state:s.trend,cls:s.trendClass}];if(model.forming)items.push({name:'THE MODEL',state:model.confirmed?'TRADE SETUP':'FORMING',cls:'bull'});s.patterns.forEach(p=>items.push({name:p.name,state:p.state,cls:p.cls}));if(!s.patterns.length&&!model.forming)items.push({name:'Pattern',state:'NO CLEAR PATTERN',cls:'neutral'});el.innerHTML=items.map(x=>'<div class="structure-item"><span class="structure-name">'+x.name+'</span><span class="structure-state '+x.cls+'">'+x.state+'</span></div>').join('');const actionable=s.patterns.find(p=>p.state==='CONFIRMED'||p.state==='FORMING');if(actionable)showPatternAlert(actionable);const h=Object.fromEntries(Object.entries(bias).map(([k,v])=>[k,v]));const setup=tradeSetup(a,h);const modelEligible=setup&&model.forming&&((setup.count>=7)||(setup.count===6&&h['1W']===0));if(modelEligible){const key=asset+'|'+selected+'|'+candles.at(-1)?.t+'|THE_MODEL|'+setup.count;if(key!==lastModelAlertKey){lastModelAlertKey=key;showTradeSetupAlert(setup,'model');}}}
+function renderMarketStructure(){const el=$('marketStructure');if(!el)return;const s=detectMarketStructure(candles),a=calc(candles),model=detectTheModel(candles,a),items=[{name:'Swing Structure',state:s.trend,cls:s.trendClass}];if(model.forming)items.push({name:'THE MODEL',state:model.confirmed?'TRADE SETUP':model.dir==='short'?'BEARISH FORMING':'FORMING',cls:model.dir==='short'?'bear':'bull'});s.patterns.forEach(p=>items.push({name:p.name,state:p.state,cls:p.cls}));if(!s.patterns.length&&!model.forming)items.push({name:'Pattern',state:'NO CLEAR PATTERN',cls:'neutral'});el.innerHTML=items.map(x=>'<div class="structure-item"><span class="structure-name">'+x.name+'</span><span class="structure-state '+x.cls+'">'+x.state+'</span></div>').join('');const actionable=s.patterns.find(p=>p.state==='CONFIRMED'||p.state==='FORMING');if(actionable)showPatternAlert(actionable);const h=Object.fromEntries(Object.entries(bias).map(([k,v])=>[k,v]));const setup=tradeSetup(a,h);const modelEligible=setup&&model.forming&&((setup.count>=7)||(setup.count===6&&h['1W']===0));if(modelEligible){const key=asset+'|'+selected+'|'+candles.at(-1)?.t+'|THE_MODEL|'+setup.dir+'|'+setup.count;if(key!==lastModelAlertKey){lastModelAlertKey=key;showTradeSetupAlert(setup,'model');}}}
 const TRADE_TRACKER_KEY='marketMatTradeTrackerV1';
 let tradeTracker=[];
 try{tradeTracker=JSON.parse(localStorage.getItem(TRADE_TRACKER_KEY)||'[]');if(!Array.isArray(tradeTracker))tradeTracker=[];}catch(_){tradeTracker=[];}
