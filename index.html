@@ -141,7 +141,7 @@ function renderHigherTimeframeExtension(htf){const wrap=$('htExtension'),rows=$(
 function biasFor(c){if(c.length<30)return 0;let close=c.map(x=>x.c),e=ema(close,50),e200=ema(close,200),i=c.length-1;return close[i]>e[i]&&e[i]>e200[i]?1:close[i]<e[i]&&e[i]<e200[i]?-1:0}
 async function fetchCandles(id,tf){const key=id+'|'+tf;const cacheTtl=['1D','1W','1MO'].includes(tf)?120000:['4H','6H','12H'].includes(tf)?60000:15000;if(cache[key]&&Date.now()-cache[key].time<cacheTtl)return cache[key].data;const map={'1M':['ONE_MINUTE',1],'5M':['FIVE_MINUTE',5],'15M':['FIFTEEN_MINUTE',15],'30M':['FIFTEEN_MINUTE',15],'1H':['ONE_HOUR',60],'2H':['ONE_HOUR',60],'4H':['ONE_HOUR',60],'6H':['SIX_HOUR',360],'12H':['SIX_HOUR',360],'1D':['ONE_DAY',1440],'1W':['ONE_DAY',1440],'1MO':['ONE_DAY',1440]};const [g,baseMins]=map[tf]||['ONE_DAY',1440];const targetMins=TF[tf].mins;const historyLimit=tf==='1MO'?7200:tf==='1W'?2100:300;const count=Math.min(historyLimit,Math.ceil(targetMins/baseMins*300));let end=Math.floor(Date.now()/1000),step=baseMins*60,start=end-step*count;const api=id==='NASDAQ'?('/api/nasdaq?granularity='+encodeURIComponent(g)+'&start='+start+'&end='+end+'&limit='+count):('/api/candles?product='+encodeURIComponent(id)+'&granularity='+encodeURIComponent(g)+'&start='+start+'&end='+end+'&limit='+count);const ctrl=new AbortController();const timer=setTimeout(()=>ctrl.abort(),7000);let res;try{res=await fetch(api,{headers:{Accept:'application/json'},signal:ctrl.signal})}catch(e){if(e.name==='AbortError')throw Error('Market data request timed out after 7 seconds');throw e}finally{clearTimeout(timer)}if(!res.ok)throw Error('Market data HTTP '+res.status);const j=await res.json();let data=(j.candles||[]).map(x=>({t:+x.start,o:+x.open,h:+x.high,l:+x.low,c:+x.close,v:+x.volume})).sort((a,b)=>a.t-b.t);if(!data.length)throw Error((id==='NASDAQ'?'NASDAQ':'Coinbase')+' returned no candles for '+id);if(targetMins>baseMins){const out=[];let b=null;for(const x of data){const k=Math.floor(x.t/(targetMins*60))*(targetMins*60);if(!b||b.t!==k){if(b)out.push(b);b={t:k,o:x.o,h:x.h,l:x.l,c:x.c,v:x.v}}else{b.h=Math.max(b.h,x.h);b.l=Math.min(b.l,x.l);b.c=x.c;b.v+=x.v}}if(b)out.push(b);data=out}cache[key]={time:Date.now(),data};return data}
 async function load(){$('status').textContent='CONNECTING TO COINBASE';$('dataState').textContent='CONNECTING';document.querySelectorAll('.timeframes button').forEach(b=>b.classList.toggle('active',b.dataset.tf===selected));$('status').className='status developing';$('status').textContent='CONNECTING TO MARKET DATA';$('dataState').textContent='CONNECTING';try{candles=await fetchCandles(asset,selected);if(!candles||candles.length<25)throw Error('Not enough market candles returned');render()}catch(e){console.error(e);$('dataState').textContent='ERROR';$('status').textContent='DATA ERROR';$('missing').textContent='Could not load '+asset+' '+selected+': '+e.message;draw(null)}}
-function render(){const a=calc(candles),higher={},htf={};checkIndicatorCrosses(a);checkPossibleModelReclaim(asset,selected,candles,a);renderMarketStructure();if(['1H','2H','4H','1D'].includes(selected))scanTweezerPatterns(asset);for(const tf of ['1W','1D','4H'])higher[tf]=tf===selected?biasFor(candles):0;Promise.all(['1W','1D','4H'].map(tf=>fetchCandles(asset,tf).then(c=>biasFor(c)).catch(()=>0))).then(vals=>{higher['1W']=vals[0];higher['1D']=vals[1];higher['4H']=vals[2];return Promise.all(['1H','2H','4H'].map(tf=>fetchCandles(asset,tf).then(c=>higherTimeframeExtension(c,tf)).catch(()=>({tf,extended:false,severe:false}))));}).then(exts=>{exts.forEach(x=>{htf[x.tf]=x});renderHigherTimeframeExtension(htf);score(a,higher,htf)});draw(a)}
+function render(){const a=calc(candles),higher={},htf={};checkIndicatorCrosses(a);checkPossibleModelReclaim(asset,selected,candles,a);checkModelTradeAlert(asset,selected,candles,a);renderMarketStructure();if(['1H','2H','4H','1D'].includes(selected))scanTweezerPatterns(asset);for(const tf of ['1W','1D','4H'])higher[tf]=tf===selected?biasFor(candles):0;Promise.all(['1W','1D','4H'].map(tf=>fetchCandles(asset,tf).then(c=>biasFor(c)).catch(()=>0))).then(vals=>{higher['1W']=vals[0];higher['1D']=vals[1];higher['4H']=vals[2];return Promise.all(['1H','2H','4H'].map(tf=>fetchCandles(asset,tf).then(c=>higherTimeframeExtension(c,tf)).catch(()=>({tf,extended:false,severe:false}))));}).then(exts=>{exts.forEach(x=>{htf[x.tf]=x});renderHigherTimeframeExtension(htf);score(a,higher,htf)});draw(a)}
 function recentSwing(c,dir,lookback=12){const i=c.length-1,start=Math.max(1,i-lookback);if(dir==='long'){let v=Infinity;for(let j=start;j<i;j++)v=Math.min(v,c[j].l);return v}else{let v=-Infinity;for(let j=start;j<i;j++)v=Math.max(v,c[j].h);return v}}
 function updateScalpLadder(a,h){const bull=[h['1W']>0,h['1D']>0,h['4H']>0,a.above200,a.ma21Ok,a.aboveVW,a.bullSt,a.div===1,a.vol].filter(Boolean).length;const bear=[h['1W']<0,h['1D']<0,h['4H']<0,!a.above200,!a.ma21Ok,!a.aboveVW,a.bearSt,a.div===-1,a.vol].filter(Boolean).length;const count=Math.max(bull,bear);document.querySelectorAll('.ladder-row').forEach(row=>{const min=+row.dataset.min,max=+row.dataset.max,on=count>=min&&count<=max;row.classList.toggle('active',on);row.classList.toggle('pin',on&&max===9);});}
 let lastSetupKey='';let setupAlertTimer=0;let lastQualifiedKey='';let hasEvaluatedSetup=false;let previousSetupState=null;let lastAlertCandleKey='';let lastMa21TouchAlertKey='';let stableSetupState=null;
@@ -170,6 +170,7 @@ function checkPossibleModelReclaim(id,tf,c,a){
       const key=id+'|'+tf+'|'+c[i].t+'|POSSIBLE_MODEL_BULL';
       if(!scannerState[key]){
         scannerState[key]=true;
+        modelWatchState[id+'|'+tf]={dir:'long',startedCandle:c[i].t,alertedCandle:null};
         const body=tf+' • '+id+'<br>Price reclaimed the 200 EMA after a dump, and the 21 MA crossed back above the 200 EMA.<br><strong>POSSIBLE MODEL</strong> • Watch for consolidation above the 200 with the 21 running through price action.';
         pushMarketAlert('🟢 POSSIBLE MODEL • '+id,body,'long','MODEL',key);
         notifyMarketMat('🟢 MARKET MAT • POSSIBLE MODEL',id+' • '+tf+' • Price reclaimed 200 + 21 MA crossed above 200',key);
@@ -197,6 +198,7 @@ function checkPossibleModelReclaim(id,tf,c,a){
   const key=id+'|'+tf+'|'+c[i].t+'|POSSIBLE_MODEL_BEAR';
   if(scannerState[key])return;
   scannerState[key]=true;
+  modelWatchState[id+'|'+tf]={dir:'short',startedCandle:c[i].t,alertedCandle:null};
   const body=tf+' • '+id+'<br>Price crossed back below the 200 EMA after a pump, and the 21 MA crossed below the 200 EMA.<br><strong>⚠️ POSSIBLE BEARISH MODEL</strong> • Watch for consolidation below the 200 with the 21 running through price action.';
   pushMarketAlert('🔴 POSSIBLE BEARISH MODEL • '+id,body,'short','MODEL',key);
   notifyMarketMat('🔴 MARKET MAT • POSSIBLE BEARISH MODEL',id+' • '+tf+' • Price crossed below 200 + 21 MA crossed below 200',key);
@@ -204,6 +206,33 @@ function checkPossibleModelReclaim(id,tf,c,a){
 }
 
 const scannerState={};
+const modelWatchState={};
+
+function checkModelTradeAlert(id,tf,c,a){
+  if(!['1M','5M','15M'].includes(tf)||!c||c.length<25||!a||!Array.isArray(a.e200)||!Array.isArray(a.m21))return;
+  const state=modelWatchState[id+'|'+tf];
+  if(!state)return;
+  const i=c.length-1,start=Math.max(0,i-7);
+  let touches=0;
+  for(let j=start;j<=i;j++){
+    const ma=a.m21[j],bar=c[j];
+    if(!Number.isFinite(ma)||!bar)continue;
+    const tolerance=Math.max(Math.abs(ma)*0.003,Math.abs(bar.h-bar.l)*0.12);
+    const touched=bar.l<=ma+tolerance&&bar.h>=ma-tolerance;
+    const holding=state.dir==='long'?bar.c>=a.e200[j]:bar.c<=a.e200[j];
+    if(touched&&holding)touches++;
+  }
+  if(touches<2||touches>3||state.alertedCandle===c[i].t)return;
+  const dir=state.dir==='long'?'long':'short';
+  const side=dir==='long'?'above':'below';
+  const title=dir==='long'?'🚨 TRADE ALERT • THE MODEL':'🚨 TRADE ALERT • THE BEARISH MODEL';
+  const body=tf+' • '+id+'<br>'+touches+' touches of the 21 MA while price consolidates '+side+' the 200 EMA.<br><strong>'+(dir==='long'?'THE MODEL IS SET — WATCH FOR ENTRY':'THE BEARISH MODEL IS SET — WATCH FOR ENTRY')+'</strong><br>Wait for your normal entry confirmation at the 21 MA / VWAP.';
+  const alertKey=id+'|'+tf+'|'+c[i].t+'|TRADE_ALERT_MODEL|'+dir;
+  state.alertedCandle=c[i].t;
+  pushMarketAlert(title,body,dir,'MODEL',alertKey);
+  notifyMarketMat(title,id+' • '+tf+' • '+touches+' touches of 21 while consolidating '+side+' 200',alertKey);
+  if(soundOn)buzzer();
+}
 let scannerBusy=false;
 const SCAN_ASSETS=['BTC-USD','ETH-USD','SOL-USD','HYPE-USD','NASDAQ'];
 async function scanOtherAssets(){
@@ -217,6 +246,7 @@ async function scanOtherAssets(){
         if(!c||c.length<25)continue;
         const a=calc(c);
         checkPossibleModelReclaim(id,selected,c,a);
+        checkModelTradeAlert(id,selected,c,a);
         const higher={};
         const vals=await Promise.all(['1W','1D','4H'].map(tf=>fetchCandles(id,tf).then(x=>biasFor(x)).catch(()=>0)));
         higher['1W']=vals[0];higher['1D']=vals[1];higher['4H']=vals[2];
