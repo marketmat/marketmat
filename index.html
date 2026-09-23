@@ -149,28 +149,57 @@ function checkPossibleModelReclaim(id,tf,c,a){
   if(!['1M','5M','15M'].includes(tf)||!c||c.length<30||!a||!Array.isArray(a.e200)||!Array.isArray(a.m21)||!Array.isArray(a.atr))return;
   const i=c.length-1,p=i-1;
   if(p<1||!Number.isFinite(a.e200[i])||!Number.isFinite(a.e200[p])||!Number.isFinite(a.m21[i])||!Number.isFinite(a.m21[p]))return;
-  const dumpStart=Math.max(0,p-24);
+  const lookbackStart=Math.max(0,p-24);
+
+  // Bullish reclaim: price dumped below the 200, then reclaimed it while the
+  // 21 MA crossed back above the 200.
   let dumpIndex=-1;
-  for(let j=dumpStart;j<p;j++){
+  for(let j=lookbackStart;j<p;j++){
     if(!Number.isFinite(a.e200[j])||!Number.isFinite(a.atr[j]))continue;
     const below=a.e200[j]-c[j].c;
     if(c[j].c<a.e200[j]&&below>=Math.max(a.atr[j]*0.5,a.e200[j]*0.0015)){dumpIndex=j;break;}
   }
-  if(dumpIndex<0)return;
-  let priceCrossIndex=-1;
-  for(let j=dumpIndex+1;j<=i;j++){
-    if(j<1||!Number.isFinite(a.e200[j-1])||!Number.isFinite(a.e200[j]))continue;
-    if(c[j-1].c<=a.e200[j-1]&&c[j].c>a.e200[j]){priceCrossIndex=j;break;}
+  if(dumpIndex>=0){
+    let priceCrossIndex=-1;
+    for(let j=dumpIndex+1;j<=i;j++){
+      if(j<1||!Number.isFinite(a.e200[j-1])||!Number.isFinite(a.e200[j]))continue;
+      if(c[j-1].c<=a.e200[j-1]&&c[j].c>a.e200[j]){priceCrossIndex=j;break;}
+    }
+    const maCrossNow=a.m21[p]<=a.e200[p]&&a.m21[i]>a.e200[i];
+    if(priceCrossIndex>=0&&maCrossNow&&i-priceCrossIndex<=12){
+      const key=id+'|'+tf+'|'+c[i].t+'|POSSIBLE_MODEL_BULL';
+      if(!scannerState[key]){
+        scannerState[key]=true;
+        const body=tf+' • '+id+'<br>Price reclaimed the 200 EMA after a dump, and the 21 MA crossed back above the 200 EMA.<br><strong>POSSIBLE MODEL</strong> • Watch for consolidation above the 200 with the 21 running through price action.';
+        pushMarketAlert('🟢 POSSIBLE MODEL • '+id,body,'long','MODEL',key);
+        notifyMarketMat('🟢 MARKET MAT • POSSIBLE MODEL',id+' • '+tf+' • Price reclaimed 200 + 21 MA crossed above 200',key);
+        if(soundOn)buzzer();
+      }
+    }
   }
-  if(priceCrossIndex<0)return;
-  const maCrossNow=a.m21[p]<=a.e200[p]&&a.m21[i]>a.e200[i];
-  if(!maCrossNow||i-priceCrossIndex>12)return;
-  const key=id+'|'+tf+'|'+c[i].t+'|POSSIBLE_MODEL';
+
+  // Bearish reclaim failure: price pumped above the 200, then crossed back
+  // below it while the 21 MA crossed below the 200.
+  let pumpIndex=-1;
+  for(let j=lookbackStart;j<p;j++){
+    if(!Number.isFinite(a.e200[j])||!Number.isFinite(a.atr[j]))continue;
+    const above=c[j].c-a.e200[j];
+    if(c[j].c>a.e200[j]&&above>=Math.max(a.atr[j]*0.5,a.e200[j]*0.0015)){pumpIndex=j;break;}
+  }
+  if(pumpIndex<0)return;
+  let priceBearCrossIndex=-1;
+  for(let j=pumpIndex+1;j<=i;j++){
+    if(j<1||!Number.isFinite(a.e200[j-1])||!Number.isFinite(a.e200[j]))continue;
+    if(c[j-1].c>=a.e200[j-1]&&c[j].c<a.e200[j]){priceBearCrossIndex=j;break;}
+  }
+  const maBearCrossNow=a.m21[p]>=a.e200[p]&&a.m21[i]<a.e200[i];
+  if(priceBearCrossIndex<0||!maBearCrossNow||i-priceBearCrossIndex>12)return;
+  const key=id+'|'+tf+'|'+c[i].t+'|POSSIBLE_MODEL_BEAR';
   if(scannerState[key])return;
   scannerState[key]=true;
-  const body=tf+' • '+id+'<br>Price reclaimed the 200 EMA after a dump, and the 21 MA crossed back above the 200 EMA.<br><strong>POSSIBLE MODEL</strong> • Watch for consolidation above the 200 with the 21 running through price action.';
-  pushMarketAlert('🟢 POSSIBLE MODEL • '+id,body,'long','MODEL',key);
-  notifyMarketMat('🟢 MARKET MAT • POSSIBLE MODEL',id+' • '+tf+' • Price reclaimed 200 + 21 MA crossed above 200',key);
+  const body=tf+' • '+id+'<br>Price crossed back below the 200 EMA after a pump, and the 21 MA crossed below the 200 EMA.<br><strong>⚠️ POSSIBLE BEARISH MODEL</strong> • Watch for consolidation below the 200 with the 21 running through price action.';
+  pushMarketAlert('🔴 POSSIBLE BEARISH MODEL • '+id,body,'short','MODEL',key);
+  notifyMarketMat('🔴 MARKET MAT • POSSIBLE BEARISH MODEL',id+' • '+tf+' • Price crossed below 200 + 21 MA crossed below 200',key);
   if(soundOn)buzzer();
 }
 
