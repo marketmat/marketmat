@@ -459,12 +459,12 @@ function detectTweezerPattern(c,tf){
 
   // Similar highs/lows define the tweezer. Tolerance scales with candle range
   // so it works across BTC, ETH, SOL, HYPE and NASDAQ.
-  const highTol=Math.max(Math.abs(a.h)*0.0015,Math.max(rangeA,rangeB)*0.18);
-  const lowTol=Math.max(Math.abs(a.l)*0.0015,Math.max(rangeA,rangeB)*0.18);
+  const highTol=Math.max(Math.abs(a.h)*0.0035,Math.max(rangeA,rangeB)*0.30);
+  const lowTol=Math.max(Math.abs(a.l)*0.0035,Math.max(rangeA,rangeB)*0.30);
   const similarLow=Math.abs(a.l-b.l)<=lowTol;
   const similarHigh=Math.abs(a.h-b.h)<=highTol;
-  const bottomWicks=lowerA>=rangeA*0.20&&lowerB>=rangeB*0.20;
-  const topWicks=upperA>=rangeA*0.20&&upperB>=rangeB*0.20;
+  const bottomWicks=lowerA>=rangeA*0.12&&lowerB>=rangeB*0.12;
+  const topWicks=upperA>=rangeA*0.12&&upperB>=rangeB*0.12;
 
   const bullish=redA&&greenB&&similarLow&&bottomWicks;
   const bearish=greenA&&redB&&similarHigh&&topWicks;
