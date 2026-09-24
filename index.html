@@ -164,7 +164,7 @@ function checkPossibleModelReclaim(id,tf,c,a){
       const stop=Number.isFinite(a.e200[i])?a.e200[i]*0.9975:null;
       const risk=Number.isFinite(stop)?entry-stop:null;
       const target=Number.isFinite(risk)&&risk>0?entry+risk*3:null;
-      const body=tf+' • '+id+'<br>Price is holding ABOVE the 200 EMA while the 21 MA is consolidating through price.<br><strong>🟢 POSSIBLE MODEL • EARLY WARNING</strong><br>This is a possibility alert — wait for MODEL confirmation and normal entry confirmation.<br><strong>WATCH 21 MA / VWAP RETEST</strong>'+(Number.isFinite(stop)&&Number.isFinite(target)?'<br>Reference 3:1 levels • ENTRY '+entry.toFixed(2)+' • STOP '+stop.toFixed(2)+' • TARGET '+target.toFixed(2):'');
+      const triggerTime=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date((c[i].t+TF[tf].mins*60)*1000))+' ET';const body=tf+' • '+id+'<br>Price is holding ABOVE the 200 EMA while the 21 MA is consolidating through price.<br><strong>TRIGGERED AT '+triggerTime+'</strong><br>Price is holding ABOVE the 200 EMA while the 21 MA is consolidating through price.<strong>🟢 POSSIBLE MODEL • EARLY WARNING</strong><br>This is a possibility alert — wait for MODEL confirmation and normal entry confirmation.<br><strong>WATCH 21 MA / VWAP RETEST</strong>'+(Number.isFinite(stop)&&Number.isFinite(target)?'<br>Reference 3:1 levels • ENTRY '+entry.toFixed(2)+' • STOP '+stop.toFixed(2)+' • TARGET '+target.toFixed(2):'');
       pushMarketAlert('🟢 POSSIBLE MODEL • '+id,body,'long','MODEL',key);
       notifyMarketMat('🟢 MARKET MAT • POSSIBLE MODEL',id+' • '+tf+' • bullish model may be forming',key);
       if(soundOn)buzzer();
@@ -192,7 +192,7 @@ function checkPossibleModelReclaim(id,tf,c,a){
         scannerState[key]=true;
         modelWatchState[id+'|'+tf]={dir:'long',startedCandle:c[i].t,alertedCandle:null};
         const entry=c[i].c,stop=a.e200[i]*0.9975,risk=entry-stop,target=entry+risk*3;
-        const body=tf+' • '+id+'<br>Price reclaimed the 200 EMA and the 21 MA crossed ABOVE the 200 EMA.<br><strong>🟢 MODEL CROSS • LONG ALERT</strong><br><strong>3:1 TRADE SETUP</strong> • ENTRY '+entry.toFixed(2)+' • STOP '+stop.toFixed(2)+' (BELOW 200 EMA) • TARGET '+target.toFixed(2);
+        const triggerTime=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date((c[i].t+TF[tf].mins*60)*1000))+' ET';const body=tf+' • '+id+'<br>Price reclaimed the 200 EMA and the 21 MA crossed ABOVE the 200 EMA.<br><strong>TRIGGERED AT '+triggerTime+'</strong><br>Price reclaimed the 200 EMA and the 21 MA crossed ABOVE the 200 EMA.<strong>🟢 MODEL CROSS • LONG ALERT</strong><br><strong>3:1 TRADE SETUP</strong> • ENTRY '+entry.toFixed(2)+' • STOP '+stop.toFixed(2)+' (BELOW 200 EMA) • TARGET '+target.toFixed(2);
         pushMarketAlert('🟢 MODEL CROSS • '+id,body,'long','MODEL',key);
         notifyMarketMat('🟢 MARKET MAT • MODEL CROSS',id+' • '+tf+' • 21 MA crossed above 200 • 3:1 setup',key);
         if(soundOn)buzzer();
@@ -221,7 +221,7 @@ function checkPossibleModelReclaim(id,tf,c,a){
   scannerState[key]=true;
   modelWatchState[id+'|'+tf]={dir:'short',startedCandle:c[i].t,alertedCandle:null};
   const entry=c[i].c,stop=a.e200[i]*1.0025,risk=stop-entry,target=entry-risk*3;
-  const body=tf+' • '+id+'<br>Price crossed back below the 200 EMA and the 21 MA crossed BELOW the 200 EMA.<br><strong>🔴 MODEL CROSS • SHORT ALERT</strong><br><strong>3:1 TRADE SETUP</strong> • ENTRY '+entry.toFixed(2)+' • STOP '+stop.toFixed(2)+' (ABOVE 200 EMA) • TARGET '+target.toFixed(2);
+  const triggerTime=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date((c[i].t+TF[tf].mins*60)*1000))+' ET';const body=tf+' • '+id+'<br>Price crossed back below the 200 EMA and the 21 MA crossed BELOW the 200 EMA.<br><strong>TRIGGERED AT '+triggerTime+'</strong><br>Price crossed back below the 200 EMA and the 21 MA crossed BELOW the 200 EMA.<strong>🔴 MODEL CROSS • SHORT ALERT</strong><br><strong>3:1 TRADE SETUP</strong> • ENTRY '+entry.toFixed(2)+' • STOP '+stop.toFixed(2)+' (ABOVE 200 EMA) • TARGET '+target.toFixed(2);
   pushMarketAlert('🔴 MODEL CROSS • '+id,body,'short','MODEL',key);
   notifyMarketMat('🔴 MARKET MAT • MODEL CROSS',id+' • '+tf+' • 21 MA crossed below 200 • 3:1 setup',key);
   if(soundOn)buzzer();
@@ -538,7 +538,7 @@ function scanTweezerPatterns(id){
       const plan=highTf&&Number.isFinite(entry)&&Number.isFinite(stop)&&Number.isFinite(target)&&risk>0
         ? '<div class="risk-reminder"><strong>3:1 TRADE SETUP</strong><br>ENTRY '+entry.toFixed(2)+' • STOP '+stop.toFixed(2)+' • TARGET '+target.toFixed(2)+'<br>Stop uses the tweezer wick invalidation level. Size from the stop distance.</div>'
         : '<div class="risk-reminder">Use proper risk management and size the position from the stop distance.</div>';
-      const candleCloseTime=new Date((p.candleTime+tfSecs)*1000);const triggerTime=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(candleCloseTime)+' ET';const alertShownTime=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date())+' ET';const body=tf+' • '+id+'<br><strong>CANDLE CLOSED '+triggerTime+'</strong><br>'+p.message+plan+'<br><span style="font-size:10px;opacity:.7">ALERT SHOWN '+alertShownTime+'</span>';
+      const candleCloseTime=new Date((p.candleTime+TF[tf].mins*60)*1000);const triggerTime=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',hour12:true}).format(candleCloseTime)+' ET';const alertShownTime=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',second:'2-digit',hour12:true}).format(new Date())+' ET';const body=tf+' • '+id+'<br><strong>CANDLE CLOSED '+triggerTime+'</strong><br>'+p.message+plan+'<br><span style="font-size:10px;opacity:.7">ALERT SHOWN '+alertShownTime+'</span>';
       pushMarketAlert((highTf?'3:1 ':'')+p.type+' • '+p.state,body,p.cls==='bull'?'long':'short','TWEEZER',key);
       notifyMarketMat('🔔 MARKET MAT • '+(highTf?'3:1 ':'')+p.type,id+' • '+tf+' • '+p.state+(highTf?' • 3:1 TARGET':'') ,key);
     }).catch(e=>console.warn('Tweezer scan failed for '+id+' '+tf,e));
